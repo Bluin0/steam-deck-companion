@@ -199,18 +199,21 @@ function switchTab(tabId) {
         viewWeb.classList.add('active');
         if (webTabTitle) webTabTitle.textContent = tab.name || 'Visor Web';
         
-        let targetSrc = tab.url;
-        // Use proxy for external sites that block iframes
-        if (tab.url.startsWith('http')) {
-            if (tab.url.includes('duckduckgo.com') || tab.url.includes('mapgenie.io')) {
-                targetSrc = tab.url;
-            } else {
-                targetSrc = '/proxy?url=' + encodeURIComponent(tab.url);
-            }
+        const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
+        const resolvedUrl = (tab.url || '').replace(/\{game_name\}/g, encodeURIComponent(gName));
+        const resolvedDirectUrl = (tab.direct_url || tab.url || '').replace(/\{game_name\}/g, encodeURIComponent(gName));
+
+        let targetSrc = resolvedUrl;
+
+        // If URL contains igu=1 (Google iframe embed) or allows direct embed, load directly without proxy lag
+        if (resolvedUrl.includes('igu=1') || resolvedUrl.includes('mapgenie.io')) {
+            targetSrc = resolvedUrl;
+        } else if (resolvedUrl.startsWith('http')) {
+            targetSrc = '/proxy?url=' + encodeURIComponent(resolvedUrl);
         }
 
         if (btnOpenExternal) {
-            btnOpenExternal.onclick = () => window.open(tab.url, '_blank');
+            btnOpenExternal.onclick = () => window.open(resolvedDirectUrl, '_blank');
         }
         if (btnReloadFrame) {
             btnReloadFrame.onclick = () => {

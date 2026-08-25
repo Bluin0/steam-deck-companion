@@ -13,7 +13,8 @@
       "name": "HLTB",
       "icon": "⏱️",
       "type": "web",
-      "url": "https://howlongtobeat.com"
+      "url": "https://www.google.com/search?igu=1&q=howlongtobeat+{game_name}",
+      "direct_url": "https://howlongtobeat.com/?q={game_name}"
     },
     {
       "id": "notes",
@@ -23,10 +24,10 @@
     },
     {
       "id": "browser",
-      "name": "Navegador",
+      "name": "Google",
       "icon": "🌐",
       "type": "web",
-      "url": "https://html.duckduckgo.com"
+      "url": "https://www.google.com/search?igu=1"
     }
   ]
 }
