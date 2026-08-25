@@ -75,6 +75,44 @@ function updateGameDisplay(game) {
     pidTag.textContent = `PID: ${game.pid}`;
 }
 
+// Normalize Gamepad Input for both Standard (Steam Input) and Raw Linux Steam Deck (Steam app closed)
+function normalizeGamepadInput(gp) {
+    const rawButtons = gp.buttons.map(b => b.pressed ? 1 : 0);
+    const rawAxes = gp.axes.map(a => Math.abs(a) < 0.08 ? 0 : a); // 0.08 deadzone
+
+    // 1. If mapping is standard (W3C standard, e.g. Steam Input active)
+    if (gp.mapping === 'standard') {
+        return { buttons: rawButtons, axes: rawAxes };
+    }
+
+    // 2. Raw Linux Steam Deck (Steam app closed)
+    // Raw evdev layout: axes[0]=LX, axes[1]=LY, axes[2]=LT, axes[3]=RX, axes[4]=RY, axes[5]=RT, axes[6]=DpadX, axes[7]=DpadY
+    const normalizedButtons = [...rawButtons];
+    const normalizedAxes = [0, 0, 0, 0];
+
+    if (rawAxes.length >= 5) {
+        normalizedAxes[0] = rawAxes[0]; // LX
+        normalizedAxes[1] = rawAxes[1]; // LY
+        normalizedAxes[2] = rawAxes[3]; // RX (Skip LT at index 2)
+        normalizedAxes[3] = rawAxes[4]; // RY
+    } else {
+        normalizedAxes[0] = rawAxes[0] || 0;
+        normalizedAxes[1] = rawAxes[1] || 0;
+        normalizedAxes[2] = rawAxes[2] || 0;
+        normalizedAxes[3] = rawAxes[3] || 0;
+    }
+
+    // D-Pad Hat axes mapping (axes[6] & axes[7])
+    if (rawAxes.length >= 8) {
+        if (rawAxes[6] < -0.5) normalizedButtons[14] = 1; // Left
+        if (rawAxes[6] > 0.5)  normalizedButtons[15] = 1; // Right
+        if (rawAxes[7] < -0.5) normalizedButtons[12] = 1; // Up
+        if (rawAxes[7] > 0.5)  normalizedButtons[13] = 1; // Down
+    }
+
+    return { buttons: normalizedButtons, axes: normalizedAxes };
+}
+
 // Poll Gamepad API
 function pollGamepad() {
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -93,11 +131,10 @@ function pollGamepad() {
         return;
     }
 
-    gpStatus.textContent = `Controller Active: ${activeGamepad.id.substring(0, 24)}...`;
+    gpStatus.textContent = `Controller Active: ${activeGamepad.id.substring(0, 24)}... (${activeGamepad.mapping || 'raw'})`;
 
-    // Process buttons & axes
-    const buttons = activeGamepad.buttons.map(b => b.pressed ? 1 : 0);
-    const axes = activeGamepad.axes.map(a => Math.abs(a) < 0.08 ? 0 : a); // 0.08 deadzone
+    // Process buttons & axes with auto-normalization
+    const { buttons, axes } = normalizeGamepadInput(activeGamepad);
 
     // Update Visual HUD
     updateGamepadHUD(buttons, axes);
