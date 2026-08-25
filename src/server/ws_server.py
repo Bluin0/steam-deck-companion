@@ -10,7 +10,14 @@ import threading
 from pathlib import Path
 import websockets
 
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
+PROFILES_DIR = ROOT_DIR / "profiles"
+NOTES_DIR = ROOT_DIR / "notes"
+
+# Ensure notes and profiles directory exist
+NOTES_DIR.mkdir(exist_ok=True)
+PROFILES_DIR.mkdir(exist_ok=True)
 
 class CompanionServer:
     def __init__(self, host="0.0.0.0", http_port=8080, ws_port=8765, game_detector=None, virtual_controller=None):
@@ -39,15 +46,88 @@ class CompanionServer:
         t = threading.Thread(target=_serve, daemon=True)
         t.start()
 
+    def _get_installed_games(self):
+        """Returns a sorted list of installed Steam games."""
+        if not self.game_detector or not self.game_detector.games_map:
+            return []
+        
+        seen_appids = set()
+        games = []
+        for info in self.game_detector.games_map.values():
+            appid = info.get("appid")
+            name = info.get("name")
+            if appid and name and appid not in seen_appids:
+                seen_appids.add(appid)
+                games.append({"appid": appid, "name": name})
+        
+        return sorted(games, key=lambda x: x["name"].lower())
+
+    def _load_profile(self, appid):
+        """Loads game profile JSON or falls back to default.json."""
+        if appid:
+            profile_file = PROFILES_DIR / f"{appid}.json"
+            if profile_file.exists():
+                try:
+                    with open(profile_file, "r", encoding="utf-8") as f:
+                        return json.load(f)
+                except Exception as e:
+                    print(f"[Profile] Error loading profile for {appid}: {e}")
+
+        default_file = PROFILES_DIR / "default.json"
+        if default_file.exists():
+            try:
+                with open(default_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
+        return {
+            "appid": "default",
+            "name": "General Profile",
+            "tabs": [
+                {"id": "overview", "name": "Resumen", "icon": "📋", "type": "overview"},
+                {"id": "hltb", "name": "HLTB", "icon": "⏱️", "type": "web", "url": "https://howlongtobeat.com"},
+                {"id": "notes", "name": "Notas", "icon": "📝", "type": "notes"},
+                {"id": "browser", "name": "Navegador", "icon": "🌐", "type": "web", "url": "https://www.google.com"}
+            ]
+        }
+
+    def _get_notes(self, appid):
+        """Retrieves saved scratchpad notes for a game."""
+        notes_file = NOTES_DIR / f"{appid}.txt"
+        if notes_file.exists():
+            try:
+                with open(notes_file, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception:
+                return ""
+        return ""
+
+    def _save_notes(self, appid, content):
+        """Saves scratchpad notes for a game."""
+        notes_file = NOTES_DIR / f"{appid}.txt"
+        try:
+            with open(notes_file, "w", encoding="utf-8") as f:
+                f.write(content)
+            return True
+        except Exception as e:
+            print(f"[Notes] Error saving notes for {appid}: {e}")
+            return False
+
     async def _handle_ws_client(self, websocket):
         self.connected_clients.add(websocket)
         client_addr = websocket.remote_address
         print(f"[WS] Client connected: {client_addr}")
 
-        # Send initial state
+        appid = self.current_game.get("appid") if self.current_game else "default"
+
+        # Send initial full state
         await websocket.send(json.dumps({
-            "type": "game_update",
-            "game": self.current_game
+            "type": "init",
+            "game": self.current_game,
+            "profile": self._load_profile(appid),
+            "notes": self._get_notes(appid),
+            "installed_games": self._get_installed_games()
         }))
 
         try:
@@ -55,8 +135,31 @@ class CompanionServer:
                 try:
                     data = json.loads(message)
                     msg_type = data.get("type")
+                    
                     if msg_type == "input" and self.virtual_controller:
                         self.virtual_controller.update_input(data.get("state", {}))
+                    
+                    elif msg_type == "save_notes":
+                        target_appid = data.get("appid", "default")
+                        content = data.get("content", "")
+                        success = self._save_notes(target_appid, content)
+                        await websocket.send(json.dumps({
+                            "type": "notes_saved",
+                            "appid": target_appid,
+                            "success": success
+                        }))
+
+                    elif msg_type == "set_game_manual":
+                        manual_appid = data.get("appid")
+                        manual_name = data.get("name", "Manual Selection")
+                        game_data = {
+                            "appid": str(manual_appid),
+                            "name": manual_name,
+                            "pid": "manual",
+                            "exe": "manual"
+                        }
+                        await self.broadcast_game_state(game_data)
+
                 except json.JSONDecodeError:
                     pass
         except websockets.exceptions.ConnectionClosed:
@@ -66,7 +169,7 @@ class CompanionServer:
             print(f"[WS] Client disconnected: {client_addr}")
 
     async def broadcast_game_state(self, game_info):
-        """Broadcasts running game status change to all connected clients."""
+        """Broadcasts running game status & corresponding profile to all clients."""
         if self.current_game == game_info:
             return
         self.current_game = game_info
@@ -75,9 +178,12 @@ class CompanionServer:
         if not self.connected_clients:
             return
 
+        appid = self.current_game.get("appid") if self.current_game else "default"
         payload = json.dumps({
             "type": "game_update",
-            "game": self.current_game
+            "game": self.current_game,
+            "profile": self._load_profile(appid),
+            "notes": self._get_notes(appid)
         })
 
         await asyncio.gather(
@@ -90,7 +196,8 @@ class CompanionServer:
         while True:
             if self.game_detector:
                 detected = self.game_detector.detect_running_game()
-                await self.broadcast_game_state(detected)
+                if detected:
+                    await self.broadcast_game_state(detected)
             await asyncio.sleep(3)
 
     async def run(self):

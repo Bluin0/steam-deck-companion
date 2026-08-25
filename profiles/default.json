@@ -1,0 +1,32 @@
+{
+  "appid": "default",
+  "name": "General Game Profile",
+  "tabs": [
+    {
+      "id": "overview",
+      "name": "Resumen",
+      "icon": "📋",
+      "type": "overview"
+    },
+    {
+      "id": "hltb",
+      "name": "HLTB",
+      "icon": "⏱️",
+      "type": "web",
+      "url": "https://howlongtobeat.com"
+    },
+    {
+      "id": "notes",
+      "name": "Notas",
+      "icon": "📝",
+      "type": "notes"
+    },
+    {
+      "id": "browser",
+      "name": "Navegador",
+      "icon": "🌐",
+      "type": "web",
+      "url": "https://www.google.com"
+    }
+  ]
+}

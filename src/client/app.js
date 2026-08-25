@@ -1,38 +1,66 @@
 /**
- * Steam Deck Companion Frontend Client Script.
- * 
- * Captures Gamepad API events and sends input state over WebSocket.
- * Listens for active game updates broadcast by the PC server.
+ * Steam Deck Companion — Touch Dashboard Client
  */
 
 const WS_PORT = 8765;
 const wsUrl = `ws://${window.location.hostname}:${WS_PORT}`;
 
+// State
 let ws = null;
-let activeGamepad = null;
-let lastInputState = null;
+let currentGame = null;
+let currentProfile = null;
+let installedGames = [];
+let sessionStartTime = Date.now();
+let timerInterval = null;
+let notesSaveTimeout = null;
+let activeTabId = 'overview';
 
 // DOM Elements
 const connBadge = document.getElementById('connBadge');
 const connText = document.getElementById('connText');
 const gameTitle = document.getElementById('gameTitle');
-const gameSubtitle = document.getElementById('gameSubtitle');
-const appIdTag = document.getElementById('appIdTag');
-const pidTag = document.getElementById('pidTag');
-const gpStatus = document.getElementById('gpStatus');
-const leftStickDot = document.getElementById('leftStickDot');
-const rightStickDot = document.getElementById('rightStickDot');
-const buttonElements = document.querySelectorAll('.btn-indicator');
+const gameCover = document.getElementById('gameCover');
+const gameCoverPlaceholder = document.getElementById('gameCoverPlaceholder');
+const sessionTimer = document.getElementById('sessionTimer');
+const sidebarTabs = document.getElementById('sidebarTabs');
 
-// Connect WebSocket
+// Views
+const viewOverview = document.getElementById('view-overview');
+const viewWeb = document.getElementById('view-web');
+const viewNotes = document.getElementById('view-notes');
+const webFrame = document.getElementById('webFrame');
+const iframeLoader = document.getElementById('iframeLoader');
+
+// Overview Elements
+const overviewTitle = document.getElementById('overviewTitle');
+const overviewSubtitle = document.getElementById('overviewSubtitle');
+const overviewAppId = document.getElementById('overviewAppId');
+const overviewPid = document.getElementById('overviewPid');
+const cardQuickHltb = document.getElementById('cardQuickHltb');
+const cardQuickNotes = document.getElementById('cardQuickNotes');
+
+// Notes Elements
+const notesArea = document.getElementById('notesArea');
+const notesStatus = document.getElementById('notesStatus');
+const btnClearNotes = document.getElementById('btnClearNotes');
+
+// Modal Elements
+const gameModal = document.getElementById('gameModal');
+const btnOpenPicker = document.getElementById('btnOpenPicker');
+const btnCloseModal = document.getElementById('btnCloseModal');
+const gameSearchInput = document.getElementById('gameSearchInput');
+const gamesList = document.getElementById('gamesList');
+
+// ================= WebSocket & State =================
+
 function connectWebSocket() {
-    connText.textContent = 'Connecting...';
+    connText.textContent = 'PC...';
     connBadge.classList.remove('connected');
 
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        connText.textContent = 'Connected to PC';
+        connText.textContent = 'PC';
         connBadge.classList.add('connected');
         console.log('[WS] Connected to server:', wsUrl);
     };
@@ -40,84 +68,221 @@ function connectWebSocket() {
     ws.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
-            if (data.type === 'game_update') {
-                updateGameDisplay(data.game);
+            if (data.type === 'init') {
+                installedGames = data.installed_games || [];
+                handleGameUpdate(data.game, data.profile, data.notes);
+            } else if (data.type === 'game_update') {
+                handleGameUpdate(data.game, data.profile, data.notes);
+            } else if (data.type === 'notes_saved') {
+                notesStatus.textContent = 'Guardado en PC ✓';
+                setTimeout(() => { notesStatus.textContent = 'Guardado en PC'; }, 2000);
             }
         } catch (e) {
-            console.error('[WS] Error parsing message:', e);
+            console.error('[WS] Error processing message:', e);
         }
     };
 
     ws.onclose = () => {
-        connText.textContent = 'Disconnected (Retrying)';
+        connText.textContent = 'Desconectado';
         connBadge.classList.remove('connected');
         setTimeout(connectWebSocket, 2000);
     };
 
     ws.onerror = (err) => {
-        console.error('[WS] Error:', err);
+        console.error('[WS] Socket error:', err);
     };
 }
 
-// Update Active Game Info UI
-function updateGameDisplay(game) {
-    if (!game) {
-        gameTitle.textContent = 'No Game Detected';
-        gameSubtitle.textContent = 'Launch a Steam game on your PC';
-        appIdTag.textContent = 'AppID: --';
-        pidTag.textContent = 'PID: --';
+function handleGameUpdate(game, profile, notes) {
+    const isNewGame = !currentGame || (game && currentGame.appid !== game.appid);
+    currentGame = game;
+    currentProfile = profile;
+
+    if (isNewGame) {
+        sessionStartTime = Date.now();
+    }
+
+    updateHeaderUI();
+    renderTabs();
+    if (notes !== undefined) {
+        notesArea.value = notes || '';
+    }
+
+    // Switch to Overview or keep active tab if exists
+    if (!profile.tabs.find(t => t.id === activeTabId)) {
+        switchTab('overview');
+    }
+}
+
+// ================= UI Updates =================
+
+function updateHeaderUI() {
+    if (currentGame && currentGame.name) {
+        gameTitle.textContent = currentGame.name;
+        overviewTitle.textContent = currentGame.name;
+        overviewSubtitle.textContent = `En ejecución en PC (PID: ${currentGame.pid || '--'})`;
+        overviewAppId.textContent = `AppID: ${currentGame.appid || '--'}`;
+        overviewPid.textContent = `PID: ${currentGame.pid || '--'}`;
+
+        if (currentGame.appid && currentGame.appid !== 'default') {
+            const coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${currentGame.appid}/header.jpg`;
+            gameCover.src = coverUrl;
+            gameCover.onload = () => {
+                gameCover.classList.remove('hidden');
+                gameCoverPlaceholder.style.display = 'none';
+            };
+            gameCover.onerror = () => {
+                gameCover.classList.add('hidden');
+                gameCoverPlaceholder.style.display = 'flex';
+            };
+        } else {
+            gameCover.classList.add('hidden');
+            gameCoverPlaceholder.style.display = 'flex';
+        }
+    } else {
+        gameTitle.textContent = 'Sin juego detectado';
+        overviewTitle.textContent = 'Sin juego detectado';
+        overviewSubtitle.textContent = 'Inicia un juego en el PC o elígelo manualmente con el botón "Juegos".';
+        overviewAppId.textContent = 'AppID: --';
+        overviewPid.textContent = 'PID: --';
+        gameCover.classList.add('hidden');
+        gameCoverPlaceholder.style.display = 'flex';
+    }
+}
+
+function startSessionTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const hours = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+        const seconds = String(elapsed % 60).padStart(2, '0');
+        sessionTimer.textContent = `⏱️ ${hours}:${minutes}:${seconds}`;
+    }, 1000);
+}
+
+function renderTabs() {
+    sidebarTabs.innerHTML = '';
+    if (!currentProfile || !currentProfile.tabs) return;
+
+    currentProfile.tabs.forEach((tab) => {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${tab.id === activeTabId ? 'active' : ''}`;
+        btn.innerHTML = `<span class="tab-icon">${tab.icon || '📌'}</span><span>${tab.name}</span>`;
+        btn.onclick = () => switchTab(tab.id);
+        sidebarTabs.appendChild(btn);
+    });
+}
+
+function switchTab(tabId) {
+    activeTabId = tabId;
+    renderTabs();
+
+    const tab = currentProfile ? currentProfile.tabs.find(t => t.id === tabId) : null;
+    if (!tab) return;
+
+    // Hide all views
+    viewOverview.classList.remove('active');
+    viewWeb.classList.remove('active');
+    viewNotes.classList.remove('active');
+
+    if (tab.type === 'overview') {
+        viewOverview.classList.add('active');
+    } else if (tab.type === 'notes') {
+        viewNotes.classList.add('active');
+    } else if (tab.type === 'web') {
+        viewWeb.classList.add('active');
+        if (webFrame.src !== tab.url) {
+            iframeLoader.classList.add('active');
+            webFrame.src = tab.url;
+            webFrame.onload = () => {
+                iframeLoader.classList.remove('active');
+            };
+        }
+    }
+}
+
+// ================= Notes Handling =================
+
+notesArea.addEventListener('input', () => {
+    notesStatus.textContent = 'Guardando...';
+    if (notesSaveTimeout) clearTimeout(notesSaveTimeout);
+
+    notesSaveTimeout = setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            const appid = currentGame ? currentGame.appid : 'default';
+            ws.send(JSON.stringify({
+                type: 'save_notes',
+                appid: appid,
+                content: notesArea.value
+            }));
+        }
+    }, 800);
+});
+
+btnClearNotes.addEventListener('click', () => {
+    if (confirm('¿Vaciar las notas de este juego?')) {
+        notesArea.value = '';
+        notesArea.dispatchEvent(new Event('input'));
+    }
+});
+
+// Overview Quick Cards
+cardQuickHltb.addEventListener('click', () => switchTab('hltb'));
+cardQuickNotes.addEventListener('click', () => switchTab('notes'));
+
+// ================= Game Selector Modal =================
+
+btnOpenPicker.addEventListener('click', () => {
+    renderModalGames(installedGames);
+    gameModal.classList.remove('hidden');
+    gameSearchInput.value = '';
+    gameSearchInput.focus();
+});
+
+btnCloseModal.addEventListener('click', () => {
+    gameModal.classList.add('hidden');
+});
+
+gameSearchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = installedGames.filter(g => g.name.toLowerCase().includes(query));
+    renderModalGames(filtered);
+});
+
+function renderModalGames(list) {
+    gamesList.innerHTML = '';
+    if (!list.length) {
+        gamesList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-secondary);">No se encontraron juegos</div>';
         return;
     }
 
-    gameTitle.textContent = game.name;
-    gameSubtitle.textContent = `Running executable: ${game.exe}`;
-    appIdTag.textContent = `AppID: ${game.appid}`;
-    pidTag.textContent = `PID: ${game.pid}`;
+    list.forEach(game => {
+        const item = document.createElement('div');
+        item.className = 'game-item';
+        item.innerHTML = `
+            <span class="game-item-icon">🎮</span>
+            <span class="game-item-name">${game.name}</span>
+        `;
+        item.onclick = () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'set_game_manual',
+                    appid: game.appid,
+                    name: game.name
+                }));
+            }
+            gameModal.classList.add('hidden');
+        };
+        gamesList.appendChild(item);
+    });
 }
 
-// Normalize Gamepad Input for both Standard (Steam Input) and Raw Linux Steam Deck (Steam app closed)
-function normalizeGamepadInput(gp) {
-    const rawButtons = gp.buttons.map(b => b.pressed ? 1 : 0);
-    const rawAxes = gp.axes.map(a => Math.abs(a) < 0.08 ? 0 : a); // 0.08 deadzone
+// ================= Background Gamepad Input Forwarding =================
 
-    // 1. If mapping is standard (W3C standard, e.g. Steam Input active)
-    if (gp.mapping === 'standard') {
-        return { buttons: rawButtons, axes: rawAxes };
-    }
-
-    // 2. Raw Linux Steam Deck (Steam app closed)
-    const normalizedButtons = [...rawButtons];
-
-    // Raw evdev layout: axes[0]=LX, axes[1]=LY, axes[2]=LT, axes[3]=RX, axes[4]=RY, axes[5]=RT, axes[6]=DpadX, axes[7]=DpadY
-    const normalizedAxes = [0, 0, 0, 0];
-
-    if (rawAxes.length >= 5) {
-        normalizedAxes[0] = rawAxes[0]; // LX
-        normalizedAxes[1] = rawAxes[1]; // LY
-        normalizedAxes[2] = rawAxes[3]; // RX (Skip LT at index 2)
-        normalizedAxes[3] = rawAxes[4]; // RY
-    } else {
-        normalizedAxes[0] = rawAxes[0] || 0;
-        normalizedAxes[1] = rawAxes[1] || 0;
-        normalizedAxes[2] = rawAxes[2] || 0;
-        normalizedAxes[3] = rawAxes[3] || 0;
-    }
-
-    // D-Pad Hat axes mapping (axes[6] & axes[7])
-    if (rawAxes.length >= 8) {
-        if (rawAxes[6] < -0.5) normalizedButtons[14] = 1; // Left
-        if (rawAxes[6] > 0.5)  normalizedButtons[15] = 1; // Right
-        if (rawAxes[7] < -0.5) normalizedButtons[12] = 1; // Up
-        if (rawAxes[7] > 0.5)  normalizedButtons[13] = 1; // Down
-    }
-
-    return { buttons: normalizedButtons, axes: normalizedAxes };
-}
-
-// Poll Gamepad API
 function pollGamepad() {
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-    activeGamepad = null;
+    let activeGamepad = null;
 
     for (const gp of gamepads) {
         if (gp) {
@@ -126,61 +291,23 @@ function pollGamepad() {
         }
     }
 
-    if (!activeGamepad) {
-        gpStatus.textContent = 'No Controller Detected (Press any button)';
-        requestAnimationFrame(pollGamepad);
-        return;
-    }
+    if (activeGamepad && ws && ws.readyState === WebSocket.OPEN) {
+        const rawButtons = activeGamepad.buttons.map(b => (typeof b === 'object' ? (b.pressed ? (b.value || 1) : 0) : b));
+        const rawAxes = activeGamepad.axes.map(a => Math.abs(a) < 0.08 ? 0 : a);
 
-    gpStatus.textContent = `Controller Active: ${activeGamepad.id.substring(0, 24)}... (${activeGamepad.mapping || 'raw'})`;
-
-    // Process buttons & axes with auto-normalization
-    const { buttons, axes } = normalizeGamepadInput(activeGamepad);
-
-    // Update Visual HUD
-    updateGamepadHUD(buttons, axes);
-
-    // Send state over WebSocket
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        const inputState = { buttons, axes };
         ws.send(JSON.stringify({
             type: 'input',
-            state: inputState
+            state: { buttons: rawButtons, axes: rawAxes }
         }));
     }
 
     requestAnimationFrame(pollGamepad);
 }
 
-function updateGamepadHUD(buttons, axes) {
-    // Update button elements
-    buttonElements.forEach(el => {
-        const btnIndex = parseInt(el.getAttribute('data-btn'), 10);
-        if (buttons[btnIndex]) {
-            el.classList.add('pressed');
-        } else {
-            el.classList.remove('pressed');
-        }
-    });
-
-    // Update sticks visual
-    if (axes.length >= 4) {
-        const lx = axes[0] * 35;
-        const ly = axes[1] * 35;
-        leftStickDot.style.transform = `translate(${lx}px, ${ly}px)`;
-
-        const rx = axes[2] * 35;
-        const ry = axes[3] * 35;
-        rightStickDot.style.transform = `translate(${rx}px, ${ry}px)`;
-    }
-}
-
-// Window Event Listeners
-window.addEventListener('gamepadconnected', (e) => {
-    console.log('[Gamepad] Connected:', e.gamepad.id);
-});
+// ================= Init =================
 
 window.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
+    startSessionTimer();
     requestAnimationFrame(pollGamepad);
 });

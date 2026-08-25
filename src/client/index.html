@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,89 +10,105 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Top Status Bar -->
-        <header class="status-bar">
-            <div class="brand">
-                <span class="logo-icon">🎮</span>
-                <span class="brand-title">Deck Companion</span>
+    <div class="dashboard-container">
+        <!-- Top App Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="game-cover-container">
+                    <img id="gameCover" src="" alt="Carátula" class="game-cover hidden">
+                    <div id="gameCoverPlaceholder" class="game-cover-placeholder">🎮</div>
+                </div>
+                <div class="game-info">
+                    <div class="active-badge">JUEGO ACTIVO</div>
+                    <h1 class="game-title" id="gameTitle">Esperando juego...</h1>
+                </div>
             </div>
-            <div class="connection-badge" id="connBadge">
-                <span class="status-dot"></span>
-                <span class="status-text" id="connText">Connecting...</span>
+
+            <div class="header-right">
+                <div class="session-timer" id="sessionTimer" title="Tiempo de sesión">⏱️ 00:00:00</div>
+                <button class="btn-picker" id="btnOpenPicker" title="Seleccionar juego manualmente">
+                    <span>🔍 Juegos</span>
+                </button>
+                <div class="connection-badge" id="connBadge">
+                    <span class="status-dot"></span>
+                    <span class="status-text" id="connText">PC</span>
+                </div>
             </div>
         </header>
 
-        <!-- Main Banner / Active Game Display -->
-        <main class="main-content">
-            <section class="game-card glass" id="gameCard">
-                <div class="game-status-label">CURRENTLY PLAYING</div>
-                <h1 class="game-title" id="gameTitle">No Game Detected</h1>
-                <p class="game-subtitle" id="gameSubtitle">Launch a game on your PC or select companion mode</p>
-                <div class="game-meta" id="gameMeta">
-                    <span class="tag" id="appIdTag">AppID: --</span>
-                    <span class="tag" id="pidTag">PID: --</span>
+        <!-- Main Body: Sidebar + Active View -->
+        <div class="dashboard-body">
+            <!-- Left Tab Navigation Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <div class="sidebar-tabs" id="sidebarTabs">
+                    <!-- Dynamic Tabs loaded by Profile -->
                 </div>
-            </section>
+            </nav>
 
-            <!-- Mode Switcher & Tools -->
-            <section class="mode-selector">
-                <button class="mode-btn active" id="btnModeGame">
-                    <span class="mode-icon">🎮</span>
-                    <span>Gamepad Mode</span>
-                </button>
-                <button class="mode-btn" id="btnModeCompanion">
-                    <span class="mode-icon">🗺️</span>
-                    <span>Companion Tools</span>
-                </button>
-            </section>
-
-            <!-- Gamepad Monitor HUD -->
-            <section class="gamepad-hud glass">
-                <div class="hud-header">
-                    <h2>Input Monitor</h2>
-                    <span class="gamepad-status" id="gpStatus">No Controller Detected</span>
-                </div>
-
-                <div class="sticks-container">
-                    <div class="stick-box">
-                        <span class="stick-label">Left Stick</span>
-                        <div class="stick-pad" id="leftStickPad">
-                            <div class="stick-dot" id="leftStickDot"></div>
+            <!-- Right Content Area -->
+            <main class="content-area" id="contentArea">
+                <!-- Overview Tab View -->
+                <div class="tab-view active" id="view-overview">
+                    <div class="overview-hero">
+                        <h2 id="overviewTitle">Sin juego detectado</h2>
+                        <p id="overviewSubtitle">Inicia un juego de Steam en el PC o selecciónalo manualmente desde el botón superior.</p>
+                        <div class="meta-tags" id="overviewMeta">
+                            <span class="tag" id="overviewAppId">AppID: --</span>
+                            <span class="tag" id="overviewPid">PID: --</span>
                         </div>
                     </div>
-                    <div class="stick-box">
-                        <span class="stick-label">Right Stick</span>
-                        <div class="stick-pad" id="rightStickPad">
-                            <div class="stick-dot" id="rightStickDot"></div>
+                    <div class="quick-cards-grid">
+                        <div class="quick-card" id="cardQuickHltb">
+                            <div class="card-icon">⏱️</div>
+                            <h3>HowLongToBeat</h3>
+                            <p>Consulta la duración y estadísticas del juego.</p>
+                        </div>
+                        <div class="quick-card" id="cardQuickNotes">
+                            <div class="card-icon">📝</div>
+                            <h3>Notas de Partida</h3>
+                            <p>Tus recordatorios y apuntes guardados en el PC.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="button-grid" id="buttonGrid">
-                    <div class="btn-indicator" data-btn="0">A</div>
-                    <div class="btn-indicator" data-btn="1">B</div>
-                    <div class="btn-indicator" data-btn="2">X</div>
-                    <div class="btn-indicator" data-btn="3">Y</div>
-                    <div class="btn-indicator" data-btn="4">L1</div>
-                    <div class="btn-indicator" data-btn="5">R1</div>
-                    <div class="btn-indicator" data-btn="6">L2</div>
-                    <div class="btn-indicator" data-btn="7">R2</div>
-                    <div class="btn-indicator" data-btn="8">View</div>
-                    <div class="btn-indicator" data-btn="9">Menu</div>
-                    <div class="btn-indicator" data-btn="10">L3</div>
-                    <div class="btn-indicator" data-btn="11">R3</div>
-                    <div class="btn-indicator" data-btn="12">▲</div>
-                    <div class="btn-indicator" data-btn="13">▼</div>
-                    <div class="btn-indicator" data-btn="14">◄</div>
-                    <div class="btn-indicator" data-btn="15">►</div>
+                <!-- Web Viewer (Iframe for Maps, Wikis, HLTB, Browser) -->
+                <div class="tab-view" id="view-web">
+                    <div class="iframe-loader" id="iframeLoader">
+                        <div class="spinner"></div>
+                        <span>Cargando contenido...</span>
+                    </div>
+                    <iframe id="webFrame" class="web-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
                 </div>
-            </section>
-        </main>
 
-        <footer class="footer">
-            <span>Steam Deck Companion v0.1 • PC Remote Forwarder</span>
-        </footer>
+                <!-- Notes Scratchpad View -->
+                <div class="tab-view" id="view-notes">
+                    <div class="notes-header">
+                        <div class="notes-title-group">
+                            <h2>Bloc de Notas del Juego</h2>
+                            <span class="notes-status" id="notesStatus">Guardado en PC</span>
+                        </div>
+                        <button class="btn-clean" id="btnClearNotes">Limpiar</button>
+                    </div>
+                    <textarea id="notesArea" class="notes-textarea" placeholder="Escribe aquí tus apuntes, misiones pendientes, combinaciones o recetas... Se guardan automáticamente en tu PC."></textarea>
+                </div>
+            </main>
+        </div>
+
+        <!-- Manual Game Selector Modal -->
+        <div class="modal-backdrop hidden" id="gameModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2>🎮 Juegos Instalados en el PC</h2>
+                    <button class="modal-close" id="btnCloseModal">✕</button>
+                </div>
+                <div class="modal-search">
+                    <input type="text" id="gameSearchInput" placeholder="Buscar juego en tu biblioteca..." autocomplete="off">
+                </div>
+                <div class="modal-games-list" id="gamesList">
+                    <!-- Dynamic Games List -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

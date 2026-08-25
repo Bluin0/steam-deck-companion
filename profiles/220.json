@@ -1,0 +1,39 @@
+{
+  "appid": "220",
+  "name": "Half-Life 2",
+  "tabs": [
+    {
+      "id": "overview",
+      "name": "Resumen",
+      "icon": "📋",
+      "type": "overview"
+    },
+    {
+      "id": "wiki",
+      "name": "Wiki",
+      "icon": "📖",
+      "type": "web",
+      "url": "https://half-life.fandom.com/wiki/Half-Life_2"
+    },
+    {
+      "id": "hltb",
+      "name": "HLTB",
+      "icon": "⏱️",
+      "type": "web",
+      "url": "https://howlongtobeat.com/game/4280"
+    },
+    {
+      "id": "notes",
+      "name": "Notas",
+      "icon": "📝",
+      "type": "notes"
+    },
+    {
+      "id": "browser",
+      "name": "Navegador",
+      "icon": "🌐",
+      "type": "web",
+      "url": "https://www.google.com"
+    }
+  ]
+}
