@@ -13,19 +13,35 @@ DESKTOP_ENTRY="$HOME/.local/share/applications/steam-deck-companion.desktop"
 
 mkdir -p "$APP_DIR/profile"
 
-# Ask for PC IP or use default
-read -p "Introduce la IP de tu PC de juegos (ej. 192.168.1.100): " PC_IP
-if [ -z "$PC_IP" ]; then
-    echo "⚠️ No se introdujo IP, usando localhost:8080 por defecto."
-    PC_IP="127.0.0.1"
+# Get IP from argument or tty or zenity
+PC_IP="$1"
+
+if [ -z "$PC_IP" ] && [ -t 0 ]; then
+    read -p "Introduce la IP de tu PC de juegos (ej. 192.168.1.100): " PC_IP || true
+elif [ -z "$PC_IP" ] && [ -e /dev/tty ]; then
+    read -p "Introduce la IP de tu PC de juegos (ej. 192.168.1.100): " PC_IP < /dev/tty || true
 fi
 
-# Create launch script
+if [ -z "$PC_IP" ] && command -v zenity >/dev/null 2>&1; then
+    PC_IP=$(zenity --entry --title="Steam Deck Companion" --text="Introduce la IP local de tu PC de juegos (ej. 192.168.1.100):" 2>/dev/null || echo "")
+fi
+
+if [ -z "$PC_IP" ]; then
+    PC_IP="192.168.1.100"
+    echo "⚠️ Usando IP por defecto: $PC_IP (puedes cambiarla en $APP_DIR/pc_ip.txt)"
+else
+    echo "✅ IP configurada: $PC_IP"
+fi
+
+# Save IP
+echo "$PC_IP" > "$APP_DIR/pc_ip.txt"
+
+# Write launch script
 cat << 'EOF' > "$LAUNCHER"
 #!/usr/bin/env bash
 PC_IP_FILE="$HOME/.local/share/steam-deck-companion/pc_ip.txt"
 if [ -f "$PC_IP_FILE" ]; then
-    PC_IP=$(cat "$PC_IP_FILE")
+    PC_IP=$(cat "$PC_IP_FILE" | tr -d '[:space:]')
 else
     PC_IP="192.168.1.100"
 fi
@@ -42,7 +58,6 @@ flatpak run com.google.Chrome \
 EOF
 
 chmod +x "$LAUNCHER"
-echo "$PC_IP" > "$APP_DIR/pc_ip.txt"
 
 # Create Desktop entry for Steam
 cat << EOF > "$DESKTOP_ENTRY"
@@ -58,9 +73,11 @@ EOF
 
 chmod +x "$DESKTOP_ENTRY"
 
-echo "✅ ¡Instalación completada con éxito!"
 echo ""
-echo "📌 Para añadirlo a tu biblioteca de Steam en Gaming Mode:"
+echo "✅ ¡Instalación completada con éxito!"
+echo "📌 Tu app se ha configurado para conectar a: http://${PC_IP}:8080"
+echo ""
+echo "Pasos para añadir a Steam:"
 echo "1. Abre Steam en Modo Escritorio."
 echo "2. Haz clic en 'Añadir un juego' (abajo a la izquierda) ➔ 'Añadir un producto que no es de Steam...'."
 echo "3. Selecciona 'Steam Deck Companion' de la lista y pulsa 'Añadir seleccionados'."
