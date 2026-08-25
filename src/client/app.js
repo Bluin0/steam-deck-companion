@@ -88,14 +88,6 @@ function normalizeGamepadInput(gp) {
     // 2. Raw Linux Steam Deck (Steam app closed)
     const normalizedButtons = [...rawButtons];
 
-    // Raw Linux Deck evdev swaps A and Y face buttons: raw[3] is A, raw[0] is Y
-    if (rawButtons.length >= 4) {
-        normalizedButtons[0] = rawButtons[3]; // A
-        normalizedButtons[1] = rawButtons[1]; // B
-        normalizedButtons[2] = rawButtons[2]; // X
-        normalizedButtons[3] = rawButtons[0]; // Y
-    }
-
     // Raw evdev layout: axes[0]=LX, axes[1]=LY, axes[2]=LT, axes[3]=RX, axes[4]=RY, axes[5]=RT, axes[6]=DpadX, axes[7]=DpadY
     const normalizedAxes = [0, 0, 0, 0];
 
