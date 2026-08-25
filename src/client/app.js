@@ -174,6 +174,11 @@ function renderTabs() {
     });
 }
 
+// Web Controls
+const webTabTitle = document.getElementById('webTabTitle');
+const btnReloadFrame = document.getElementById('btnReloadFrame');
+const btnOpenExternal = document.getElementById('btnOpenExternal');
+
 function switchTab(tabId) {
     activeTabId = tabId;
     renderTabs();
@@ -192,9 +197,31 @@ function switchTab(tabId) {
         viewNotes.classList.add('active');
     } else if (tab.type === 'web') {
         viewWeb.classList.add('active');
-        if (webFrame.src !== tab.url) {
+        if (webTabTitle) webTabTitle.textContent = tab.name || 'Visor Web';
+        
+        let targetSrc = tab.url;
+        // Use proxy for external sites that block iframes
+        if (tab.url.startsWith('http')) {
+            if (tab.url.includes('duckduckgo.com') || tab.url.includes('mapgenie.io')) {
+                targetSrc = tab.url;
+            } else {
+                targetSrc = '/proxy?url=' + encodeURIComponent(tab.url);
+            }
+        }
+
+        if (btnOpenExternal) {
+            btnOpenExternal.onclick = () => window.open(tab.url, '_blank');
+        }
+        if (btnReloadFrame) {
+            btnReloadFrame.onclick = () => {
+                iframeLoader.classList.add('active');
+                webFrame.src = targetSrc;
+            };
+        }
+
+        if (webFrame.src !== targetSrc) {
             iframeLoader.classList.add('active');
-            webFrame.src = tab.url;
+            webFrame.src = targetSrc;
             webFrame.onload = () => {
                 iframeLoader.classList.remove('active');
             };

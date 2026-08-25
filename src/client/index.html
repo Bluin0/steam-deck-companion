@@ -73,11 +73,20 @@
 
                 <!-- Web Viewer (Iframe for Maps, Wikis, HLTB, Browser) -->
                 <div class="tab-view" id="view-web">
-                    <div class="iframe-loader" id="iframeLoader">
-                        <div class="spinner"></div>
-                        <span>Cargando contenido...</span>
+                    <div class="web-view-header">
+                        <span class="web-view-title" id="webTabTitle">Visor Web</span>
+                        <div class="web-view-actions">
+                            <button class="btn-action" id="btnReloadFrame" title="Recargar vista">🔄 Recargar</button>
+                            <button class="btn-action" id="btnOpenExternal" title="Abrir en pestaña nueva">↗️ Abrir fuera</button>
+                        </div>
                     </div>
-                    <iframe id="webFrame" class="web-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
+                    <div class="iframe-container">
+                        <div class="iframe-loader" id="iframeLoader">
+                            <div class="spinner"></div>
+                            <span>Cargando contenido...</span>
+                        </div>
+                        <iframe id="webFrame" class="web-frame" src="about:blank"></iframe>
+                    </div>
                 </div>
 
                 <!-- Notes Scratchpad View -->

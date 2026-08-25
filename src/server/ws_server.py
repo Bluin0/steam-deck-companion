@@ -19,6 +19,9 @@ NOTES_DIR = ROOT_DIR / "notes"
 NOTES_DIR.mkdir(exist_ok=True)
 PROFILES_DIR.mkdir(exist_ok=True)
 
+import urllib.parse
+import urllib.request
+
 class CompanionServer:
     def __init__(self, host="0.0.0.0", http_port=8080, ws_port=8765, game_detector=None, virtual_controller=None):
         self.host = host
@@ -35,8 +38,45 @@ class CompanionServer:
         class QuietHandler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, request, client_address, server):
                 super().__init__(request, client_address, server, directory=str(CLIENT_DIR))
+            
             def log_message(self, format, *args):
                 pass # Silence HTTP log spam
+
+            def do_GET(self):
+                # Proxy to strip X-Frame-Options and CSP for web viewer
+                if self.path.startswith('/proxy?url='):
+                    target_url = urllib.parse.unquote(self.path[len('/proxy?url='):])
+                    try:
+                        req = urllib.request.Request(
+                            target_url,
+                            headers={"User-Agent": "Mozilla/5.0 (X11; SteamOS; Linux x86_64) AppleWebKit/537.36"}
+                        )
+                        with urllib.request.urlopen(req, timeout=10) as resp:
+                            content = resp.read()
+                            content_type = resp.headers.get("Content-Type", "text/html; charset=utf-8")
+                            
+                            # Inject base tag for relative links
+                            if "text/html" in content_type:
+                                base_tag = f'<base href="{target_url}">'
+                                if b'<head>' in content:
+                                    content = content.replace(b'<head>', b'<head>' + base_tag.encode('utf-8'))
+                                elif b'<HEAD>' in content:
+                                    content = content.replace(b'<HEAD>', b'<HEAD>' + base_tag.encode('utf-8'))
+                            
+                            self.send_response(200)
+                            self.send_header("Content-Type", content_type)
+                            self.send_header("Access-Control-Allow-Origin", "*")
+                            self.end_headers()
+                            self.wfile.write(content)
+                            return
+                    except Exception as e:
+                        self.send_response(502)
+                        self.send_header("Content-Type", "text/html; charset=utf-8")
+                        self.end_headers()
+                        err_html = f"<html><body style='background:#0f141c;color:#f0f4f8;font-family:sans-serif;padding:2rem;text-align:center;'><h3>No se pudo cargar la vista embebida</h3><p>{e}</p></body></html>"
+                        self.wfile.write(err_html.encode('utf-8'))
+                        return
+                super().do_GET()
 
         def _serve():
             with socketserver.TCPServer((self.host, self.http_port), QuietHandler) as httpd:
