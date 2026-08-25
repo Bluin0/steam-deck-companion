@@ -9,11 +9,19 @@
       "type": "overview"
     },
     {
+      "id": "map",
+      "name": "Mapa",
+      "icon": "🗺️",
+      "type": "web",
+      "url": "https://mapgenie.io/search?q={game_name}",
+      "direct_url": "https://mapgenie.io/search?q={game_name}"
+    },
+    {
       "id": "wiki",
-      "name": "Wiki",
+      "name": "Wiki / Guía",
       "icon": "📖",
       "type": "web",
-      "url": "https://www.google.com/search?igu=1&q=wiki+{game_name}",
+      "url": "https://www.google.com/search?igu=1&q=guia+vandal+{game_name}",
       "direct_url": "https://half-life.fandom.com/wiki/Half-Life_2"
     },
     {

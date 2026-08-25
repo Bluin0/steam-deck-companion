@@ -9,6 +9,22 @@
       "type": "overview"
     },
     {
+      "id": "map",
+      "name": "Mapa",
+      "icon": "🗺️",
+      "type": "web",
+      "url": "https://mapgenie.io/search?q={game_name}",
+      "direct_url": "https://mapgenie.io/search?q={game_name}"
+    },
+    {
+      "id": "wiki",
+      "name": "Wiki / Guía",
+      "icon": "📖",
+      "type": "web",
+      "url": "https://www.google.com/search?igu=1&q=guia+vandal+{game_name}",
+      "direct_url": "https://vandal.elespanol.com/buscar/?q={game_name}+guia"
+    },
+    {
       "id": "hltb",
       "name": "HLTB",
       "icon": "⏱️",
