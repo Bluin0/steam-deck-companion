@@ -116,12 +116,13 @@ STEAM DECK (Client)                    PC (Server)
 
 ## Current State
 
-**Phase 0: Validation Prototypes** — In progress
+**Phase 2: Input Forwarding** — Complete ✅
+All core systems validated and working end-to-end with zero latency in real gameplay.
 
 ## Roadmap
 
 1. ✅ Phase 0: Validation prototypes (game detection, WebSocket, virtual controller, Deck test)
-2. ⬜ Phase 1: First vertical slice (connect → detect game → show on Deck)
-3. ⬜ Phase 2: Input forwarding (Deck → PC → virtual controller → game)
+2. ✅ Phase 1: First vertical slice (connect → detect game → show on Deck)
+3. ✅ Phase 2: Input forwarding (Deck → PC → virtual controller → game)
 4. ⬜ Phase 3: Basic companion UI (game profiles, manual selection)
 5. ⬜ Phase 4+: Modules, polish (deferred)
