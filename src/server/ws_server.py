@@ -82,6 +82,36 @@ class CompanionServer:
                         err_html = f"<html><body style='background:#0f141c;color:#f0f4f8;font-family:sans-serif;padding:2rem;text-align:center;'><h3>No se pudo cargar la vista embebida</h3><p>{e}</p></body></html>"
                         self.wfile.write(err_html.encode('utf-8'))
                         return
+                elif self.path.startswith('/api/search_games?q='):
+                    query = urllib.parse.unquote(self.path[len('/api/search_games?q='):])
+                    try:
+                        steam_url = f"https://store.steampowered.com/api/storesearch/?term={urllib.parse.quote(query)}&l=spanish&cc=ES"
+                        req = urllib.request.Request(
+                            steam_url,
+                            headers={"User-Agent": "Mozilla/5.0"}
+                        )
+                        with urllib.request.urlopen(req, timeout=6) as resp:
+                            data = json.loads(resp.read().decode('utf-8'))
+                            items = [
+                                {
+                                    "appid": str(item["id"]),
+                                    "name": item["name"],
+                                    "img": item.get("tiny_image", "")
+                                }
+                                for item in data.get("items", [])
+                            ]
+                            self.send_response(200)
+                            self.send_header("Content-Type", "application/json; charset=utf-8")
+                            self.send_header("Access-Control-Allow-Origin", "*")
+                            self.end_headers()
+                            self.wfile.write(json.dumps(items).encode('utf-8'))
+                            return
+                    except Exception:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.end_headers()
+                        self.wfile.write(b"[]")
+                        return
                 super().do_GET()
 
         def _serve():

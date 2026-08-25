@@ -274,38 +274,104 @@ btnCloseModal.addEventListener('click', () => {
     gameModal.classList.add('hidden');
 });
 
+let gameSearchDebounce = null;
+
 gameSearchInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const filtered = installedGames.filter(g => g.name.toLowerCase().includes(query));
-    renderModalGames(filtered);
+    const rawQuery = e.target.value.trim();
+    if (gameSearchDebounce) clearTimeout(gameSearchDebounce);
+
+    gameSearchDebounce = setTimeout(async () => {
+        if (!rawQuery) {
+            renderModalGames(installedGames, '');
+            return;
+        }
+
+        const query = rawQuery.toLowerCase();
+        // 1. Filter local installed games
+        const localMatches = installedGames.filter(g => g.name.toLowerCase().includes(query)).map(g => ({
+            ...g,
+            source: 'installed'
+        }));
+
+        // 2. Fetch global Steam games from API
+        let onlineMatches = [];
+        try {
+            const resp = await fetch(`/api/search_games?q=${encodeURIComponent(rawQuery)}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                const seen = new Set(localMatches.map(m => m.appid));
+                onlineMatches = data.filter(item => !seen.has(item.appid)).map(item => ({
+                    ...item,
+                    source: 'steam'
+                }));
+            }
+        } catch (err) {
+            console.warn('[Search] Online game search error:', err);
+        }
+
+        const combined = [...localMatches, ...onlineMatches];
+        renderModalGames(combined, rawQuery);
+    }, 250);
 });
 
-function renderModalGames(list) {
+function renderModalGames(list, currentQuery) {
     gamesList.innerHTML = '';
-    if (!list.length) {
-        gamesList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-secondary);">No se encontraron juegos</div>';
+
+    if (currentQuery) {
+        const customItem = document.createElement('div');
+        customItem.className = 'game-item game-item-custom';
+        customItem.innerHTML = `
+            <span class="game-item-icon">✨</span>
+            <div class="game-item-info">
+                <span class="game-item-name">Usar "${currentQuery}" (Juego personalizado)</span>
+                <span class="game-badge badge-custom">Personalizado</span>
+            </div>
+        `;
+        customItem.onclick = () => {
+            selectGame('custom_' + Date.now(), currentQuery);
+        };
+        gamesList.appendChild(customItem);
+    }
+
+    if (!list.length && !currentQuery) {
+        gamesList.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-secondary);">Escribe el nombre de cualquier juego...</div>';
         return;
     }
 
     list.forEach(game => {
         const item = document.createElement('div');
         item.className = 'game-item';
+        const badgeHtml = game.source === 'installed' 
+            ? '<span class="game-badge badge-installed">Instalado</span>' 
+            : '<span class="game-badge badge-steam">Steam</span>';
+        
+        const imgHtml = game.img 
+            ? `<img src="${game.img}" class="game-item-thumb" alt="${game.name}">` 
+            : '<span class="game-item-icon">🎮</span>';
+
         item.innerHTML = `
-            <span class="game-item-icon">🎮</span>
-            <span class="game-item-name">${game.name}</span>
+            ${imgHtml}
+            <div class="game-item-info">
+                <span class="game-item-name">${game.name}</span>
+                ${badgeHtml}
+            </div>
         `;
         item.onclick = () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'set_game_manual',
-                    appid: game.appid,
-                    name: game.name
-                }));
-            }
-            gameModal.classList.add('hidden');
+            selectGame(game.appid, game.name);
         };
         gamesList.appendChild(item);
     });
+}
+
+function selectGame(appid, name) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'set_game_manual',
+            appid: appid,
+            name: name
+        }));
+    }
+    gameModal.classList.add('hidden');
 }
 
 // ================= Background Gamepad Input Forwarding =================
