@@ -1,0 +1,4 @@
+psutil>=5.9.0
+websockets>=11.0
+vgamepad>=0.1.0
+python-zeroconf>=0.70.0

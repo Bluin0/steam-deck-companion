@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>Steam Deck Gamepad Test</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: monospace; background: #1b2838; color: #c7d5e0; padding: 20px; }
+  h1 { font-size: 22px; margin-bottom: 10px; }
+  #status { font-size: 16px; margin-bottom: 20px; padding: 8px 12px; border-radius: 4px; display: inline-block; }
+  .connected { background: #264d00; color: #8bff3a; }
+  .disconnected { background: #4d0000; color: #ff4d4d; }
+  .section { margin-bottom: 16px; }
+  .section h2 { font-size: 16px; margin-bottom: 8px; color: #66c0f4; }
+  .buttons-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn { width: 60px; height: 40px; display: flex; align-items: center; justify-content: center;
+         border: 2px solid #2a475e; border-radius: 6px; font-size: 13px; background: #171a21; }
+  .btn.pressed { background: #66c0f4; color: #1b2838; border-color: #66c0f4; font-weight: bold; }
+  .axis-bar-container { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .axis-label { width: 30px; text-align: right; font-size: 13px; }
+  .axis-track { width: 300px; height: 16px; background: #171a21; border: 1px solid #2a475e;
+                border-radius: 3px; position: relative; }
+  .axis-thumb { width: 8px; height: 16px; background: #66c0f4; border-radius: 2px;
+                position: absolute; top: 0; transition: left 0.05s; }
+  .axis-val { font-size: 13px; width: 50px; }
+  #gamepad-name { color: #8f98a0; font-size: 14px; margin-bottom: 12px; }
+  #ws-status { font-size: 14px; color: #8f98a0; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<h1>🎮 Steam Deck Gamepad Prototype</h1>
+<div id="gamepad-name">No gamepad detected — press a button to connect</div>
+<div id="status" class="disconnected">WebSocket: disconnected</div>
+<div id="ws-status"></div>
+
+<div class="section">
+  <h2>Buttons</h2>
+  <div id="buttons" class="buttons-grid"></div>
+</div>
+
+<div class="section">
+  <h2>Axes</h2>
+  <div id="axes"></div>
+</div>
+
+<script>
+const DEADZONE = 0.15;
+const WS_PORT = 8765;
+
+let ws = null;
+let prevButtons = [];
+let prevAxes = [];
+
+// --- WebSocket ---
+function connectWS() {
+  const host = location.hostname || 'localhost';
+  ws = new WebSocket(`ws://${host}:${WS_PORT}`);
+  ws.onopen = () => updateWSStatus(true);
+  ws.onclose = () => { updateWSStatus(false); setTimeout(connectWS, 2000); };
+  ws.onerror = () => ws.close();
+}
+
+function updateWSStatus(connected) {
+  const el = document.getElementById('status');
+  el.textContent = `WebSocket: ${connected ? 'connected' : 'disconnected'}`;
+  el.className = connected ? 'connected' : 'disconnected';
+}
+
+function sendState(buttons, axes) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'input', buttons, axes }));
+  }
+}
+
+// --- Gamepad polling ---
+function applyDeadzone(v) { return Math.abs(v) < DEADZONE ? 0 : v; }
+
+function stateChanged(buttons, axes) {
+  if (buttons.length !== prevButtons.length) return true;
+  for (let i = 0; i < buttons.length; i++) {
+    if (buttons[i] !== prevButtons[i]) return true;
+  }
+  if (axes.length !== prevAxes.length) return true;
+  for (let i = 0; i < axes.length; i++) {
+    if (Math.abs(axes[i] - (prevAxes[i] || 0)) > 0.01) return true;
+  }
+  return false;
+}
+
+function pollGamepad() {
+  const gamepads = navigator.getGamepads();
+  const gp = gamepads[0] || gamepads[1] || gamepads[2] || gamepads[3];
+
+  if (gp) {
+    document.getElementById('gamepad-name').textContent = gp.id;
+
+    const buttons = gp.buttons.map(b => b.pressed);
+    const axes = gp.axes.map(a => +applyDeadzone(a).toFixed(3));
+
+    // Render buttons
+    const btnContainer = document.getElementById('buttons');
+    if (btnContainer.children.length !== buttons.length) {
+      btnContainer.innerHTML = buttons.map((_, i) =>
+        `<div class="btn" id="btn${i}">B${i}</div>`
+      ).join('');
+    }
+    buttons.forEach((pressed, i) => {
+      const el = document.getElementById(`btn${i}`);
+      if (el) el.className = pressed ? 'btn pressed' : 'btn';
+    });
+
+    // Render axes
+    const axContainer = document.getElementById('axes');
+    if (axContainer.children.length !== axes.length) {
+      axContainer.innerHTML = axes.map((_, i) => `
+        <div class="axis-bar-container">
+          <span class="axis-label">A${i}</span>
+          <div class="axis-track"><div class="axis-thumb" id="ax${i}"></div></div>
+          <span class="axis-val" id="axv${i}">0.000</span>
+        </div>
+      `).join('');
+    }
+    axes.forEach((v, i) => {
+      const thumb = document.getElementById(`ax${i}`);
+      const val = document.getElementById(`axv${i}`);
+      if (thumb) thumb.style.left = `${((v + 1) / 2) * 292}px`;
+      if (val) val.textContent = v.toFixed(3);
+    });
+
+    // Send on change
+    if (stateChanged(buttons, axes)) {
+      sendState(buttons, axes);
+      prevButtons = [...buttons];
+      prevAxes = [...axes];
+    }
+  }
+
+  requestAnimationFrame(pollGamepad);
+}
+
+connectWS();
+requestAnimationFrame(pollGamepad);
+</script>
+</body>
+</html>

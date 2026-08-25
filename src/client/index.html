@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Steam Deck Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Status Bar -->
+        <header class="status-bar">
+            <div class="brand">
+                <span class="logo-icon">🎮</span>
+                <span class="brand-title">Deck Companion</span>
+            </div>
+            <div class="connection-badge" id="connBadge">
+                <span class="status-dot"></span>
+                <span class="status-text" id="connText">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Banner / Active Game Display -->
+        <main class="main-content">
+            <section class="game-card glass" id="gameCard">
+                <div class="game-status-label">CURRENTLY PLAYING</div>
+                <h1 class="game-title" id="gameTitle">No Game Detected</h1>
+                <p class="game-subtitle" id="gameSubtitle">Launch a game on your PC or select companion mode</p>
+                <div class="game-meta" id="gameMeta">
+                    <span class="tag" id="appIdTag">AppID: --</span>
+                    <span class="tag" id="pidTag">PID: --</span>
+                </div>
+            </section>
+
+            <!-- Mode Switcher & Tools -->
+            <section class="mode-selector">
+                <button class="mode-btn active" id="btnModeGame">
+                    <span class="mode-icon">🎮</span>
+                    <span>Gamepad Mode</span>
+                </button>
+                <button class="mode-btn" id="btnModeCompanion">
+                    <span class="mode-icon">🗺️</span>
+                    <span>Companion Tools</span>
+                </button>
+            </section>
+
+            <!-- Gamepad Monitor HUD -->
+            <section class="gamepad-hud glass">
+                <div class="hud-header">
+                    <h2>Input Monitor</h2>
+                    <span class="gamepad-status" id="gpStatus">No Controller Detected</span>
+                </div>
+
+                <div class="sticks-container">
+                    <div class="stick-box">
+                        <span class="stick-label">Left Stick</span>
+                        <div class="stick-pad" id="leftStickPad">
+                            <div class="stick-dot" id="leftStickDot"></div>
+                        </div>
+                    </div>
+                    <div class="stick-box">
+                        <span class="stick-label">Right Stick</span>
+                        <div class="stick-pad" id="rightStickPad">
+                            <div class="stick-dot" id="rightStickDot"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-grid" id="buttonGrid">
+                    <div class="btn-indicator" data-btn="0">A</div>
+                    <div class="btn-indicator" data-btn="1">B</div>
+                    <div class="btn-indicator" data-btn="2">X</div>
+                    <div class="btn-indicator" data-btn="3">Y</div>
+                    <div class="btn-indicator" data-btn="4">LB</div>
+                    <div class="btn-indicator" data-btn="5">RB</div>
+                    <div class="btn-indicator" data-btn="12">▲</div>
+                    <div class="btn-indicator" data-btn="13">▼</div>
+                    <div class="btn-indicator" data-btn="14">◄</div>
+                    <div class="btn-indicator" data-btn="15">►</div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>Steam Deck Companion v0.1 • PC Remote Forwarder</span>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
