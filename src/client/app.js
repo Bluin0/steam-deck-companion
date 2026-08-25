@@ -203,14 +203,7 @@ function switchTab(tabId) {
         const resolvedUrl = (tab.url || '').replace(/\{game_name\}/g, encodeURIComponent(gName));
         const resolvedDirectUrl = (tab.direct_url || tab.url || '').replace(/\{game_name\}/g, encodeURIComponent(gName));
 
-        let targetSrc = resolvedUrl;
-
-        // If URL contains igu=1 (Google iframe embed) or allows direct embed, load directly without proxy lag
-        if (resolvedUrl.includes('igu=1') || resolvedUrl.includes('mapgenie.io')) {
-            targetSrc = resolvedUrl;
-        } else if (resolvedUrl.startsWith('http')) {
-            targetSrc = '/proxy?url=' + encodeURIComponent(resolvedUrl);
-        }
+        const targetSrc = resolvedUrl;
 
         if (btnOpenExternal) {
             btnOpenExternal.onclick = () => window.open(resolvedDirectUrl, '_blank');
