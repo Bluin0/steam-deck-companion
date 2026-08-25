@@ -75,12 +75,12 @@ class VirtualController:
                 # Left Joystick
                 lx = int(axes[0] * 32767)
                 ly = int(-axes[1] * 32767) # Invert Y for Xbox standard
-                self.gamepad.left_joystick_raw(x_value=lx, y_value=ly)
+                self.gamepad.left_joystick(x_value=lx, y_value=ly)
 
                 # Right Joystick
                 rx = int(axes[2] * 32767)
                 ry = int(-axes[3] * 32767) # Invert Y
-                self.gamepad.right_joystick_raw(x_value=rx, y_value=ry)
+                self.gamepad.right_joystick(x_value=rx, y_value=ry)
 
             self.gamepad.update()
         except Exception as e:
