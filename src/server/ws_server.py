@@ -26,8 +26,8 @@ class CompanionServer:
     def start_http_server(self):
         """Runs built-in HTTP server serving client UI in a background thread."""
         class QuietHandler(http.server.SimpleHTTPRequestHandler):
-            def __init__(*args, **kwargs):
-                super().__init__(*args, directory=str(CLIENT_DIR), **kwargs)
+            def __init__(self, request, client_address, server):
+                super().__init__(request, client_address, server, directory=str(CLIENT_DIR))
             def log_message(self, format, *args):
                 pass # Silence HTTP log spam
 
