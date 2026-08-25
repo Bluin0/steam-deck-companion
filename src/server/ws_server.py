@@ -42,6 +42,12 @@ class CompanionServer:
             def log_message(self, format, *args):
                 pass # Silence HTTP log spam
 
+            def end_headers(self):
+                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
+                super().end_headers()
+
             def do_GET(self):
                 # Proxy to strip X-Frame-Options and CSP for web viewer
                 if self.path.startswith('/proxy?url='):
