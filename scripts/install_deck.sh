@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Steam Deck Companion — 1-Click SteamOS Installer
+# Steam Deck Companion — 1-Click SteamOS Installer (Solución 2: Isolated Engine)
 # ==============================================================================
 
 set -e
 
-echo "🎮 Instalando Steam Deck Companion en SteamOS..."
+echo "🎮 Instalando Steam Deck Companion (Motor Aislado) en SteamOS..."
 
 APP_DIR="$HOME/.local/share/steam-deck-companion"
 LAUNCHER="$APP_DIR/launch.sh"
@@ -36,9 +36,14 @@ fi
 # Save IP
 echo "$PC_IP" > "$APP_DIR/pc_ip.txt"
 
-# Write launch script
+# Write launch script with process isolation and full security bypass flags
 cat << 'EOF' > "$LAUNCHER"
 #!/usr/bin/env bash
+
+# 1. Kill any existing Chrome/Chromium sessions so they don't block security flags
+killall -9 chrome google-chrome chromium-browser zypak-sandbox 2>/dev/null || true
+sleep 0.5
+
 PC_IP_FILE="$HOME/.local/share/steam-deck-companion/pc_ip.txt"
 if [ -f "$PC_IP_FILE" ]; then
     PC_IP=$(cat "$PC_IP_FILE" | tr -d '[:space:]')
@@ -46,14 +51,21 @@ else
     PC_IP="192.168.1.100"
 fi
 
-# Launch Flatpak Chrome with web security disabled so all websites render in iframes
+PROFILE_DIR="$HOME/.local/share/steam-deck-companion/profile"
+mkdir -p "$PROFILE_DIR"
+
+# Launch Flatpak Chrome with all frame and origin security checks disabled
 flatpak run com.google.Chrome \
     --disable-web-security \
-    --user-data-dir="$HOME/.local/share/steam-deck-companion/profile" \
-    --kiosk \
-    --start-fullscreen \
+    --user-data-dir="$PROFILE_DIR" \
+    --disable-site-isolation-trials \
+    --disable-features=IsolateOrigins,site-per-process,BlockInsecurePrivateNetworkRequests \
+    --allow-running-insecure-content \
+    --ignore-certificate-errors \
     --autoplay-policy=no-user-gesture-required \
     --disable-pinch \
+    --kiosk \
+    --start-fullscreen \
     --app="http://${PC_IP}:8080"
 EOF
 
