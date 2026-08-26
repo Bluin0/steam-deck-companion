@@ -13,14 +13,14 @@
       "name": "Mapa",
       "icon": "🗺️",
       "type": "web",
-      "url": "https://mapgenie.io"
+      "url": "https://mapgenie.io/{game_slug}"
     },
     {
       "id": "wiki",
       "name": "Guías",
       "icon": "📖",
       "type": "web",
-      "url": "https://steamcommunity.com/app/{appid}/allguides/"
+      "url": "https://steamcommunity.com/app/{appid}/guides/"
     },
     {
       "id": "hltb",

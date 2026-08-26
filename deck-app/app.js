@@ -191,6 +191,16 @@ function renderTabs() {
     });
 }
 
+function getGameSlug(name) {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 function switchTab(tabId, forceReload = false) {
     activeTabId = tabId;
     renderTabs();
@@ -212,13 +222,22 @@ function switchTab(tabId, forceReload = false) {
         if (webTabTitle) webTabTitle.textContent = tab.name || 'Visor Web';
 
         const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
-        const gAppId = (currentGame && currentGame.appid && currentGame.appid !== 'default') ? currentGame.appid : '';
+        const rawAppId = (currentGame && currentGame.appid) ? currentGame.appid : '';
+        const isNumericAppId = /^\d+$/.test(rawAppId);
+        const gAppId = isNumericAppId ? rawAppId : '';
+        const gSlug = getGameSlug(gName);
+
         let resolvedUrl = tab.url || 'https://www.google.com';
 
         if (gName || gAppId) {
-            resolvedUrl = resolvedUrl
-                .replace(/\{game_name\}/g, encodeURIComponent(gName))
-                .replace(/\{appid\}/g, encodeURIComponent(gAppId));
+            if (tab.id === 'wiki' && !isNumericAppId) {
+                resolvedUrl = `https://www.ign.com/search?q=${encodeURIComponent(gName)}+guide`;
+            } else {
+                resolvedUrl = resolvedUrl
+                    .replace(/\{game_name\}/g, encodeURIComponent(gName))
+                    .replace(/\{game_slug\}/g, encodeURIComponent(gSlug))
+                    .replace(/\{appid\}/g, encodeURIComponent(gAppId));
+            }
         } else {
             if (tab.id === 'hltb') resolvedUrl = 'https://howlongtobeat.com';
             else if (tab.id === 'map') resolvedUrl = 'https://mapgenie.io';

@@ -168,8 +168,8 @@ class CompanionServer:
             "name": "General Profile",
             "tabs": [
                 {"id": "overview", "name": "Resumen", "icon": "📋", "type": "overview"},
-                {"id": "map", "name": "Mapa", "icon": "🗺️", "type": "web", "url": "https://mapgenie.io"},
-                {"id": "wiki", "name": "Guías", "icon": "📖", "type": "web", "url": "https://steamcommunity.com/app/{appid}/allguides/"},
+                {"id": "map", "name": "Mapa", "icon": "🗺️", "type": "web", "url": "https://mapgenie.io/{game_slug}"},
+                {"id": "wiki", "name": "Guías", "icon": "📖", "type": "web", "url": "https://steamcommunity.com/app/{appid}/guides/"},
                 {"id": "hltb", "name": "HLTB", "icon": "⏱️", "type": "web", "url": "https://howlongtobeat.com/?q={game_name}"},
                 {"id": "notes", "name": "Notas", "icon": "📝", "type": "notes"},
                 {"id": "browser", "name": "Google", "icon": "🌐", "type": "web", "url": "https://www.google.com"}
