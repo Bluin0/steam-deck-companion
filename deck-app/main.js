@@ -56,8 +56,31 @@ function createWindow() {
         }
     });
 
-    // Strip frame restrictions on the webview partition session
+    // Strip frame restrictions and block heavy ad/tracking domains on the webview partition session
     const partitionSession = session.fromPartition('persist:companion');
+
+    // Block invasive ad/tracking domains so pages load faster and don't spit console errors
+    const blockedTrackerPatterns = [
+        '*://*.doubleclick.net/*',
+        '*://*.googlesyndication.com/*',
+        '*://*.google-analytics.com/*',
+        '*://*.kueez.com/*',
+        '*://*.adnxs.com/*',
+        '*://*.outbrain.com/*',
+        '*://*.taboola.com/*',
+        '*://*.criteo.com/*',
+        '*://*.scorecardresearch.com/*',
+        '*://*.amazon-adsystem.com/*',
+        '*://*.pubmatic.com/*',
+        '*://*.rubiconproject.com/*',
+        '*://*.casalemedia.com/*',
+        '*://*.openx.net/*'
+    ];
+
+    partitionSession.webRequest.onBeforeRequest({ urls: blockedTrackerPatterns }, (details, callback) => {
+        callback({ cancel: true });
+    });
+
     partitionSession.webRequest.onHeadersReceived((details, callback) => {
         const responseHeaders = { ...details.responseHeaders };
         delete responseHeaders['x-frame-options'];
