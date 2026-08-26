@@ -114,10 +114,16 @@ class CompanionServer:
                         return
                 super().do_GET()
 
+        class ReusableTCPServer(socketserver.TCPServer):
+            allow_reuse_address = True
+
         def _serve():
-            with socketserver.TCPServer((self.host, self.http_port), QuietHandler) as httpd:
-                print(f"[HTTP] Serving Steam Deck Companion UI on http://{self.host}:{self.http_port}")
-                httpd.serve_forever()
+            try:
+                with ReusableTCPServer((self.host, self.http_port), QuietHandler) as httpd:
+                    print(f"[HTTP] Serving Steam Deck Companion UI on http://{self.host}:{self.http_port}")
+                    httpd.serve_forever()
+            except Exception as e:
+                print(f"[HTTP] Could not bind to port {self.http_port}: {e}")
 
         t = threading.Thread(target=_serve, daemon=True)
         t.start()
