@@ -1,9 +1,18 @@
 @echo off
-title Compilar App para Steam Deck (.AppImage)
+title Compilar App Steam Deck (.AppImage)
 echo =======================================================
-echo   🎮 COMPILADOR: APP STEAM DECK (.AppImage)
+echo   COMPILADOR: APP STEAM DECK (.AppImage)
 echo =======================================================
 echo.
+
+:: Check for admin privileges (required for symlinks on Windows)
+net session >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Necesito permisos de Administrador para crear el .AppImage.
+    echo Relanzando como Administrador...
+    powershell -Command "Start-Process -Verb RunAs -FilePath '%~f0'"
+    exit /b
+)
 
 cd /d "%~dp0..\..\deck-app"
 
@@ -13,18 +22,6 @@ echo.
 
 echo [2/2] Generando archivo .AppImage para SteamOS...
 call npx electron-builder --linux AppImage
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ⚠️ ATENCION: En Windows, para empaquetar un archivo .AppImage de Linux,
-    echo Windows requiere permisos de enlaces simbolicos (symlinks).
-    echo.
-    echo Si te salio error de "El cliente no dispone de un privilegio requerido":
-    echo 1. Haz clic derecho sobre este archivo 'build_deck_app.bat' y selecciona 'Ejecutar como Administrador'.
-    echo O bien activa el 'Modo de Desarrollador' en la configuracion de Windows.
-    echo.
-    pause
-    exit /b 1
-)
 
 cd /d "%~dp0..\.."
 if not exist "dist\steam-deck" mkdir "dist\steam-deck"
@@ -32,8 +29,8 @@ copy /y "deck-app\dist\*.AppImage" "dist\steam-deck\" 2>nul
 
 echo.
 echo =======================================================
-echo   ✅ ¡APPIMAGE GENERADO CON ÉXITO!
-echo   📂 Archivo listo para Releases en:
+echo   APP DE STEAM DECK COMPILADA CON EXITO!
+echo   Archivo listo para Releases en:
 echo      dist\steam-deck\
 echo =======================================================
 pause
