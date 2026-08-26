@@ -7,16 +7,35 @@ import asyncio
 import sys
 from pathlib import Path
 
-# Ensure src module resolution
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Ensure src and src/server module resolution both in source and bundled mode
+CURRENT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(CURRENT_DIR))
+sys.path.insert(0, str(CURRENT_DIR.parent))
+
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    sys.path.insert(0, str(sys._MEIPASS))
+    sys.path.insert(0, str(Path(sys._MEIPASS) / "server"))
+
+try:
+    from server.game_detector import GameDetector
+    from server.virtual_controller import VirtualController
+    from server.ws_server import CompanionServer
+except ImportError:
+    from game_detector import GameDetector
+    from virtual_controller import VirtualController
+    from ws_server import CompanionServer
+
+try:
+    from server.gui import launch_gui
+except ImportError:
+    try:
+        from gui import launch_gui
+    except ImportError:
+        launch_gui = None
 
 
 def main_headless():
     """Run server in headless/terminal mode (no GUI)."""
-    from server.game_detector import GameDetector
-    from server.virtual_controller import VirtualController
-    from server.ws_server import CompanionServer
-
     print("==========================================")
     print("      STEAM DECK COMPANION SERVER         ")
     print("==========================================")
@@ -46,8 +65,10 @@ def main_headless():
 
 def main_gui():
     """Run server with desktop GUI."""
-    from server.gui import launch_gui
-    launch_gui()
+    if launch_gui is not None:
+        launch_gui()
+    else:
+        main_headless()
 
 
 def main():
@@ -56,9 +77,8 @@ def main():
     else:
         try:
             main_gui()
-        except ImportError:
-            print("[!] GUI no disponible (tkinter no instalado). Iniciando en modo terminal...")
-            print("    Para instalar tkinter: sudo apt install python3-tk")
+        except ImportError as e:
+            print(f"[!] GUI no disponible ({e}). Iniciando en modo terminal...")
             main_headless()
         except Exception as e:
             print(f"[!] Error al abrir GUI ({e}). Iniciando en modo terminal...")

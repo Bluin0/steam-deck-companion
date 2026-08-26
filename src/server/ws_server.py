@@ -7,12 +7,20 @@ import http.server
 import json
 import socketserver
 import threading
+import sys
 from pathlib import Path
 import websockets
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
-PROFILES_DIR = ROOT_DIR / "profiles"
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    BUNDLE_DIR = Path(sys._MEIPASS)
+    ROOT_DIR = Path(sys.executable).parent
+    CLIENT_DIR = BUNDLE_DIR / "src" / "client"
+    PROFILES_DIR = BUNDLE_DIR / "profiles"
+else:
+    ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+    CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
+    PROFILES_DIR = ROOT_DIR / "profiles"
+
 NOTES_DIR = ROOT_DIR / "notes"
 
 # Ensure notes and profiles directory exist

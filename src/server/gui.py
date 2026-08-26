@@ -200,11 +200,18 @@ class ServerGUI:
             return
 
         from pathlib import Path
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        CURRENT_DIR = Path(__file__).resolve().parent
+        sys.path.insert(0, str(CURRENT_DIR))
+        sys.path.insert(0, str(CURRENT_DIR.parent))
 
-        from server.game_detector import GameDetector
-        from server.virtual_controller import VirtualController
-        from server.ws_server import CompanionServer
+        try:
+            from server.game_detector import GameDetector
+            from server.virtual_controller import VirtualController
+            from server.ws_server import CompanionServer
+        except ImportError:
+            from game_detector import GameDetector
+            from virtual_controller import VirtualController
+            from ws_server import CompanionServer
 
         self._log("[+] Iniciando servidor...")
         self.detector = GameDetector()
