@@ -14,7 +14,7 @@
   "build": {
     "appId": "com.steamdeck.companion",
     "productName": "SteamDeckCompanion",
-    "artifactName": "${productName}-${os}-${arch}.${ext}",
+    "artifactName": "${productName}.${ext}",
     "directories": {
       "output": "dist"
     },
@@ -23,11 +23,6 @@
         "AppImage"
       ],
       "category": "Game"
-    },
-    "win": {
-      "target": [
-        "portable"
-      ]
     },
     "files": [
       "main.js",
