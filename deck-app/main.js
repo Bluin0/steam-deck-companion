@@ -110,3 +110,12 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
+
+// Silence benign navigation aborts (e.g. switching tabs while page is still loading or 302 redirects)
+process.on('unhandledRejection', (reason) => {
+    const strReason = String(reason || '');
+    if (reason && (reason.errno === -3 || reason.code === 'ERR_ABORTED' || strReason.includes('ERR_ABORTED') || strReason.includes('-3'))) {
+        return;
+    }
+    console.warn('[Process] Unhandled Rejection:', reason);
+});

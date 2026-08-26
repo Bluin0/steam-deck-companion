@@ -306,7 +306,12 @@ function switchTab(tabId, forceReload = false) {
             if (forceReload || webFrame.getAttribute('src') !== resolvedUrl) {
                 startWebLoading();
                 if (webFrame.loadURL) {
-                    webFrame.loadURL(resolvedUrl);
+                    webFrame.loadURL(resolvedUrl).catch((err) => {
+                        // Ignore ERR_ABORTED (-3) which happens normally when switching tabs or redirects
+                        if (err && err.errno !== -3 && err.code !== 'ERR_ABORTED') {
+                            console.warn('[WebView] Navigation:', err);
+                        }
+                    });
                 } else {
                     webFrame.setAttribute('src', resolvedUrl);
                 }
