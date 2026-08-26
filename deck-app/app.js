@@ -242,14 +242,26 @@ function getGameSlug(name) {
 }
 
 function resolveMapUrl(gameName, gameSlug) {
-    if (!gameSlug) return 'https://mapgenie.io';
-    if (KNOWN_MAPS[gameSlug]) return KNOWN_MAPS[gameSlug];
+    if (!gameName) return 'https://mapgenie.io';
+    // If exact or partial match exists in our verified interactive maps catalog:
+    if (gameSlug && KNOWN_MAPS[gameSlug]) return KNOWN_MAPS[gameSlug];
     for (const [key, url] of Object.entries(KNOWN_MAPS)) {
-        if (gameSlug.includes(key) || key.includes(gameSlug)) {
+        if (gameSlug && (gameSlug.includes(key) || key.includes(gameSlug))) {
             return url;
         }
     }
+    // Fallback: Direct search so user can enter any map immediately without 404
     return `https://www.google.com/search?q=${encodeURIComponent(gameName)}+mapa+interactivo+mapgenie`;
+}
+
+function resolveGuideUrl(gameName, rawAppId, gameSlug) {
+    if (!gameName && !rawAppId) return 'https://www.google.com';
+    const isNumericAppId = /^\d+$/.test(rawAppId);
+    if (isNumericAppId && rawAppId !== 'default') {
+        return `https://steamcommunity.com/app/${rawAppId}/guides/`;
+    }
+    // Fallback: Direct search with Vandal/Eliteguias guides
+    return `https://www.google.com/search?q=guia+vandal+${encodeURIComponent(gameName)}`;
 }
 
 function switchTab(tabId, forceReload = false) {
@@ -277,26 +289,21 @@ function switchTab(tabId, forceReload = false) {
 
         const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
         const rawAppId = (currentGame && currentGame.appid) ? currentGame.appid : '';
-        const isNumericAppId = /^\d+$/.test(rawAppId);
-        const gAppId = isNumericAppId ? rawAppId : '';
         const gSlug = getGameSlug(gName);
 
         let resolvedUrl = tab.url || 'https://www.google.com';
 
         if (tab.id === 'map') {
             resolvedUrl = resolveMapUrl(gName, gSlug);
-        } else if (gName || gAppId) {
-            if (tab.id === 'wiki' && !isNumericAppId) {
-                resolvedUrl = `https://www.ign.com/search?q=${encodeURIComponent(gName)}+guide`;
-            } else {
-                resolvedUrl = resolvedUrl
-                    .replace(/\{game_name\}/g, encodeURIComponent(gName))
-                    .replace(/\{game_slug\}/g, encodeURIComponent(gSlug))
-                    .replace(/\{appid\}/g, encodeURIComponent(gAppId));
-            }
+        } else if (tab.id === 'wiki') {
+            resolvedUrl = resolveGuideUrl(gName, rawAppId, gSlug);
+        } else if (gName || rawAppId) {
+            resolvedUrl = resolvedUrl
+                .replace(/\{game_name\}/g, encodeURIComponent(gName))
+                .replace(/\{game_slug\}/g, encodeURIComponent(gSlug))
+                .replace(/\{appid\}/g, encodeURIComponent(rawAppId));
         } else {
             if (tab.id === 'hltb') resolvedUrl = 'https://howlongtobeat.com';
-            else if (tab.id === 'wiki') resolvedUrl = 'https://steamcommunity.com';
             else resolvedUrl = 'https://www.google.com';
         }
 
@@ -307,7 +314,6 @@ function switchTab(tabId, forceReload = false) {
                 startWebLoading();
                 if (webFrame.loadURL) {
                     webFrame.loadURL(resolvedUrl).catch((err) => {
-                        // Ignore ERR_ABORTED (-3) which happens normally when switching tabs or redirects
                         if (err && err.errno !== -3 && err.code !== 'ERR_ABORTED') {
                             console.warn('[WebView] Navigation:', err);
                         }
@@ -381,6 +387,26 @@ function setupWebview() {
         if (e.errorCode !== -3) {
             console.warn('[WebView] Load warning:', e);
         }
+    });
+
+    // Auto-Recovery on 404 Not Found
+    webFrame.addEventListener('did-navigate', () => {
+        setTimeout(() => {
+            if (!webFrame) return;
+            const title = (webFrame.getTitle ? webFrame.getTitle() : '').toLowerCase();
+            const currentUrl = (webFrame.getURL ? webFrame.getURL() : '').toLowerCase();
+
+            if (title.includes('404') || title.includes('not found') || currentUrl.includes('/404')) {
+                const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
+                if (gName) {
+                    if (activeTabId === 'map') {
+                        webFrame.loadURL(`https://www.google.com/search?q=${encodeURIComponent(gName)}+mapa+interactivo+mapgenie`);
+                    } else if (activeTabId === 'wiki') {
+                        webFrame.loadURL(`https://www.google.com/search?q=guia+vandal+${encodeURIComponent(gName)}`);
+                    }
+                }
+            }
+        }, 400);
     });
 
     // Keep popups and clicked links inside the same webview
