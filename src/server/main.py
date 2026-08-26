@@ -23,7 +23,7 @@ def main():
         print(f"[+] Steam Path: {detector.steam_path}")
         print(f"[+] Installed Games Found: {len(detector.games_map)}")
     else:
-        print("[!] Steam Path not found (or non-Windows OS). Game detection will run in passive mode.")
+        print("[!] Steam Path not automatically found. Game detection will run in passive/manual mode.")
 
     controller = VirtualController()
 

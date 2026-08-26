@@ -2,13 +2,13 @@
 Game Detector Module for Steam Deck Companion.
 
 Enumerates running processes via psutil and matches them against installed Steam games.
+Cross-platform support for Windows and Linux.
 """
 
 import os
 import re
 import sys
 import time
-import winreg
 import psutil
 from pathlib import Path
 
@@ -19,16 +19,30 @@ class GameDetector:
         self.games_map = self._build_games_map() if self.library_folders else {}
 
     def _get_steam_path(self):
-        """Resolves Steam installation path on Windows."""
-        if sys.platform != "win32":
-            # For non-Windows testing, check environment or mock path
-            return None
-        try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
-            path, _ = winreg.QueryValueEx(key, "SteamPath")
-            winreg.CloseKey(key)
-            return Path(path)
-        except Exception:
+        """Resolves Steam installation path on Windows and Linux."""
+        if sys.platform == "win32":
+            try:
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
+                path, _ = winreg.QueryValueEx(key, "SteamPath")
+                winreg.CloseKey(key)
+                return Path(path)
+            except Exception:
+                default_win = Path(r"C:\Program Files (x86)\Steam")
+                return default_win if default_win.exists() else None
+        else:
+            # Linux Steam standard and Flatpak paths
+            home = Path.home()
+            linux_paths = [
+                home / ".local" / "share" / "Steam",
+                home / ".steam" / "steam",
+                home / ".steam" / "root",
+                home / ".var" / "app" / "com.valvesoftware.Steam" / ".local" / "share" / "Steam",
+                home / ".var" / "app" / "com.valvesoftware.Steam" / ".steam" / "steam"
+            ]
+            for p in linux_paths:
+                if p.exists():
+                    return p
             return None
 
     def _parse_vdf_value(self, line):
@@ -98,15 +112,14 @@ class GameDetector:
             return None
 
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'exe']):
+            for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
                 try:
-                    exe = proc.info.get('exe')
-                    if not exe:
-                        continue
-                    exe_lower = exe.lower()
+                    exe = proc.info.get('exe') or ''
+                    cmdline = ' '.join(proc.info.get('cmdline') or [])
+                    search_str = f"{exe} {cmdline}".lower()
 
                     for installdir, info in self.games_map.items():
-                        if f"\\{installdir}\\" in exe_lower or f"/{installdir}/" in exe_lower:
+                        if f"\\{installdir}\\" in search_str or f"/{installdir}/" in search_str or f"/{installdir} " in search_str:
                             return {
                                 "appid": info["appid"],
                                 "name": info["name"],

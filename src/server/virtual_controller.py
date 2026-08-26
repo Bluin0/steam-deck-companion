@@ -1,47 +1,88 @@
 """
 Virtual Controller Module for Steam Deck Companion.
 
-Wraps vgamepad (ViGEmBus) to inject Xbox 360 inputs into Windows.
+Cross-platform support:
+- Windows: Uses vgamepad (ViGEmBus) for Xbox 360 controller emulation.
+- Linux: Uses evdev (uinput kernel module) for Xbox 360 controller emulation.
+- Fallback: Graceful companion-only mode if drivers are missing.
 """
 
 import sys
 
 class VirtualController:
     def __init__(self):
+        self.backend = None # 'vgamepad', 'evdev', or None
         self.gamepad = None
         self.available = False
         self._init_device()
 
     def _init_device(self):
-        try:
-            import vgamepad as vg
-            self.vg = vg
-            self.gamepad = vg.VX360Gamepad()
-            self.available = True
-            print("[VirtualController] Virtual Xbox 360 Controller initialized successfully.")
-        except Exception as e:
-            print(f"[VirtualController] Warning: Could not initialize vgamepad ({e}).")
-            self.available = False
+        # 1. Try Windows vgamepad
+        if sys.platform == "win32":
+            try:
+                import vgamepad as vg
+                self.vg = vg
+                self.gamepad = vg.VX360Gamepad()
+                self.backend = 'vgamepad'
+                self.available = True
+                print("[VirtualController] Virtual Xbox 360 Controller (vgamepad/ViGEmBus) initialized successfully.")
+                return
+            except Exception as e:
+                print(f"[VirtualController] Notice: vgamepad not initialized ({e}).")
+
+        # 2. Try Linux uinput / evdev
+        if sys.platform.startswith("linux"):
+            try:
+                import evdev
+                from evdev import ecodes, UInput, AbsInfo
+
+                self.evdev = evdev
+                self.ecodes = ecodes
+
+                cap = {
+                    ecodes.EV_KEY: [
+                        ecodes.BTN_A, ecodes.BTN_B, ecodes.BTN_X, ecodes.BTN_Y,
+                        ecodes.BTN_TL, ecodes.BTN_TR, ecodes.BTN_SELECT, ecodes.BTN_START,
+                        ecodes.BTN_THUMBL, ecodes.BTN_THUMBR, ecodes.BTN_MODE
+                    ],
+                    ecodes.EV_ABS: [
+                        (ecodes.ABS_X, AbsInfo(value=0, min=-32768, max=32767, fuzz=0, flat=0, resolution=0)),
+                        (ecodes.ABS_Y, AbsInfo(value=0, min=-32768, max=32767, fuzz=0, flat=0, resolution=0)),
+                        (ecodes.ABS_RX, AbsInfo(value=0, min=-32768, max=32767, fuzz=0, flat=0, resolution=0)),
+                        (ecodes.ABS_RY, AbsInfo(value=0, min=-32768, max=32767, fuzz=0, flat=0, resolution=0)),
+                        (ecodes.ABS_Z, AbsInfo(value=0, min=0, max=255, fuzz=0, flat=0, resolution=0)),   # LT
+                        (ecodes.ABS_RZ, AbsInfo(value=0, min=0, max=255, fuzz=0, flat=0, resolution=0)),  # RT
+                        (ecodes.ABS_HAT0X, AbsInfo(value=0, min=-1, max=1, fuzz=0, flat=0, resolution=0)), # DPad X
+                        (ecodes.ABS_HAT0Y, AbsInfo(value=0, min=-1, max=1, fuzz=0, flat=0, resolution=0))  # DPad Y
+                    ]
+                }
+                self.gamepad = UInput(cap, name="Microsoft X-Box 360 pad", vendor=0x045e, product=0x028e, version=0x0110)
+                self.backend = 'evdev'
+                self.available = True
+                print("[VirtualController] Virtual Xbox 360 Controller (Linux uinput/evdev) initialized successfully.")
+                return
+            except Exception as e:
+                print(f"[VirtualController] Notice: Linux uinput/evdev not available ({e}).")
+
+        # 3. Fallback
+        self.available = False
+        print("[VirtualController] Controller emulation disabled. Companion dashboard features (Guides, Maps, Notes, HLTB) are fully operational.")
 
     def update_input(self, state):
-        """
-        Updates virtual controller state.
-        state dict expected format:
-        {
-          "buttons": [... list of bools or 0/1 ...],
-          "axes": [... list of floats -1.0 to 1.0 ...]
-        }
-        """
+        """Updates virtual controller state across Windows and Linux backends."""
         if not self.available or not self.gamepad:
             return
 
-        try:
-            # Map standard HTML5 Gamepad buttons to Xbox 360 controller
-            # 0: A, 1: B, 2: X, 3: Y, 4: LB, 5: RB, 6: LT, 7: RT, 8: Back, 9: Start, 10: L3, 11: R3, 12: DUp, 13: DDown, 14: DLeft, 15: DRight, 16: Guide
-            buttons = state.get("buttons", [])
-            axes = state.get("axes", [])
+        buttons = state.get("buttons", [])
+        axes = state.get("axes", [])
 
-            # Map buttons
+        if self.backend == 'vgamepad':
+            self._update_vgamepad(buttons, axes)
+        elif self.backend == 'evdev':
+            self._update_evdev(buttons, axes)
+
+    def _update_vgamepad(self, buttons, axes):
+        try:
             btn_map = [
                 (0, self.vg.XUSB_BUTTON.XUSB_GAMEPAD_A),
                 (1, self.vg.XUSB_BUTTON.XUSB_GAMEPAD_B),
@@ -65,7 +106,6 @@ class VirtualController:
                 else:
                     self.gamepad.release_button(btn_code)
 
-            # Triggers (6: Left Trigger LT/L2, 7: Right Trigger RT/R2)
             if len(buttons) > 6:
                 lt_val = int(buttons[6] * 255) if isinstance(buttons[6], (int, float)) else (255 if buttons[6] else 0)
                 self.gamepad.left_trigger(value=lt_val)
@@ -74,18 +114,60 @@ class VirtualController:
                 rt_val = int(buttons[7] * 255) if isinstance(buttons[7], (int, float)) else (255 if buttons[7] else 0)
                 self.gamepad.right_trigger(value=rt_val)
 
-            # Axes (Left stick: axes[0], axes[1]; Right stick: axes[2], axes[3])
             if len(axes) >= 4:
-                # Left Joystick
                 lx = int(axes[0] * 32767)
-                ly = int(-axes[1] * 32767) # Invert Y for Xbox standard
+                ly = int(-axes[1] * 32767)
                 self.gamepad.left_joystick(x_value=lx, y_value=ly)
 
-                # Right Joystick
                 rx = int(axes[2] * 32767)
-                ry = int(-axes[3] * 32767) # Invert Y
+                ry = int(-axes[3] * 32767)
                 self.gamepad.right_joystick(x_value=rx, y_value=ry)
 
             self.gamepad.update()
         except Exception as e:
-            print(f"[VirtualController] Error updating controller state: {e}")
+            print(f"[VirtualController] Error updating vgamepad state: {e}")
+
+    def _update_evdev(self, buttons, axes):
+        try:
+            ec = self.ecodes
+            btn_map = [
+                (0, ec.BTN_A), (1, ec.BTN_B), (2, ec.BTN_X), (3, ec.BTN_Y),
+                (4, ec.BTN_TL), (5, ec.BTN_TR),
+                (8, ec.BTN_SELECT), (9, ec.BTN_START),
+                (10, ec.BTN_THUMBL), (11, ec.BTN_THUMBR),
+                (16, ec.BTN_MODE)
+            ]
+
+            for btn_idx, code in btn_map:
+                val = 1 if (btn_idx < len(buttons) and buttons[btn_idx]) else 0
+                self.gamepad.write(ec.EV_KEY, code, val)
+
+            # DPad Hat
+            hat_x = 0
+            if len(buttons) > 14 and buttons[14]: hat_x -= 1
+            if len(buttons) > 15 and buttons[15]: hat_x += 1
+            self.gamepad.write(ec.EV_ABS, ec.ABS_HAT0X, hat_x)
+
+            hat_y = 0
+            if len(buttons) > 12 and buttons[12]: hat_y -= 1
+            if len(buttons) > 13 and buttons[13]: hat_y += 1
+            self.gamepad.write(ec.EV_ABS, ec.ABS_HAT0Y, hat_y)
+
+            # Triggers
+            if len(buttons) > 6:
+                lt = int(buttons[6] * 255) if isinstance(buttons[6], (int, float)) else (255 if buttons[6] else 0)
+                self.gamepad.write(ec.EV_ABS, ec.ABS_Z, lt)
+            if len(buttons) > 7:
+                rt = int(buttons[7] * 255) if isinstance(buttons[7], (int, float)) else (255 if buttons[7] else 0)
+                self.gamepad.write(ec.EV_ABS, ec.ABS_RZ, rt)
+
+            # Axes
+            if len(axes) >= 4:
+                self.gamepad.write(ec.EV_ABS, ec.ABS_X, int(axes[0] * 32767))
+                self.gamepad.write(ec.EV_ABS, ec.ABS_Y, int(axes[1] * 32767))
+                self.gamepad.write(ec.EV_ABS, ec.ABS_RX, int(axes[2] * 32767))
+                self.gamepad.write(ec.EV_ABS, ec.ABS_RY, int(axes[3] * 32767))
+
+            self.gamepad.syn()
+        except Exception as e:
+            print(f"[VirtualController] Error updating evdev state: {e}")
