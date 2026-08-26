@@ -5,8 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --linux zip tar.gz AppImage",
-    "build:linux": "electron-builder --linux zip tar.gz",
+    "build": "electron-builder --linux AppImage",
+    "build:linux": "electron-builder --linux AppImage",
     "build:appimage": "electron-builder --linux AppImage",
     "build:dir": "electron-builder --linux dir",
     "build:win": "electron-builder --win portable"
@@ -20,8 +20,7 @@
     },
     "linux": {
       "target": [
-        "zip",
-        "tar.gz"
+        "AppImage"
       ],
       "category": "Game"
     },
