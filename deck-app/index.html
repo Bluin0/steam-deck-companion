@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Steam Deck Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Top App Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="game-cover-container">
+                    <img id="gameCover" src="" alt="Carátula" class="game-cover hidden">
+                    <div id="gameCoverPlaceholder" class="game-cover-placeholder">🎮</div>
+                </div>
+                <div class="game-info">
+                    <div class="active-badge">JUEGO ACTIVO</div>
+                    <h1 class="game-title" id="gameTitle">Esperando juego...</h1>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="session-timer" id="sessionTimer" title="Tiempo de sesión">⏱️ 00:00:00</div>
+                <button class="btn-picker" id="btnOpenPicker" title="Seleccionar juego manualmente">
+                    <span>🔍 Juegos</span>
+                </button>
+                <div class="connection-badge" id="connBadge">
+                    <span class="status-dot"></span>
+                    <span class="status-text" id="connText">PC</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body: Sidebar + Active View -->
+        <div class="dashboard-body">
+            <!-- Left Tab Navigation Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <div class="sidebar-tabs" id="sidebarTabs">
+                    <!-- Dynamic Tabs loaded by Profile -->
+                </div>
+            </nav>
+
+            <!-- Right Content Area -->
+            <main class="content-area" id="contentArea">
+                <!-- Overview Tab View -->
+                <div class="tab-view active" id="view-overview">
+                    <div class="overview-hero">
+                        <h2 id="overviewTitle">Sin juego detectado</h2>
+                        <p id="overviewSubtitle">Inicia un juego en el PC o selecciónalo manualmente desde el botón superior "Juegos".</p>
+                        <div class="meta-tags" id="overviewMeta">
+                            <span class="tag" id="overviewAppId">AppID: --</span>
+                            <span class="tag" id="overviewPid">PID: --</span>
+                        </div>
+                    </div>
+                    <div class="quick-cards-grid">
+                        <div class="quick-card" id="cardQuickHltb">
+                            <div class="card-icon">⏱️</div>
+                            <h3>HowLongToBeat</h3>
+                            <p>Consulta la duración y estadísticas del juego.</p>
+                        </div>
+                        <div class="quick-card" id="cardQuickNotes">
+                            <div class="card-icon">📝</div>
+                            <h3>Notas de Partida</h3>
+                            <p>Tus recordatorios y apuntes guardados en el PC.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Native WebView Container (for Maps, Wikis, HLTB, Google) -->
+                <div class="tab-view" id="view-web">
+                    <div class="web-view-header">
+                        <div class="web-nav-group">
+                            <button class="btn-nav" id="btnWebBack" title="Atrás">◀</button>
+                            <button class="btn-nav" id="btnWebForward" title="Adelante">▶</button>
+                            <button class="btn-nav" id="btnWebReload" title="Recargar">🔄</button>
+                            <button class="btn-nav" id="btnWebHome" title="Inicio">🏠</button>
+                        </div>
+                        <span class="web-view-title" id="webTabTitle">Visor Web</span>
+                        <div class="web-view-actions">
+                            <button class="btn-action" id="btnWebZoomIn" title="Aumentar zoom">A+</button>
+                            <button class="btn-action" id="btnWebZoomOut" title="Reducir zoom">A-</button>
+                        </div>
+                    </div>
+                    <div class="webview-container">
+                        <div class="iframe-loader" id="webviewLoader">
+                            <div class="spinner"></div>
+                            <span>Cargando contenido...</span>
+                        </div>
+                        <webview id="webFrame" class="web-view-tag" partition="persist:companion" allowpopups></webview>
+                    </div>
+                </div>
+
+                <!-- Notes Scratchpad View -->
+                <div class="tab-view" id="view-notes">
+                    <div class="notes-header">
+                        <div class="notes-title-group">
+                            <h2>Bloc de Notas del Juego</h2>
+                            <span class="notes-status" id="notesStatus">Guardado en PC</span>
+                        </div>
+                        <button class="btn-clean" id="btnClearNotes">Limpiar</button>
+                    </div>
+                    <textarea id="notesArea" class="notes-textarea" placeholder="Escribe aquí tus apuntes, misiones pendientes, combinaciones o recetas... Se guardan automáticamente en tu PC."></textarea>
+                </div>
+            </main>
+        </div>
+
+        <!-- Manual Game Selector Modal -->
+        <div class="modal-backdrop hidden" id="gameModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2>🎮 Buscar Cualquier Juego (Steam / Catálogo)</h2>
+                    <button class="modal-close" id="btnCloseModal">✕</button>
+                </div>
+                <div class="modal-search">
+                    <input type="text" id="gameSearchInput" placeholder="Escribe el nombre de cualquier juego..." autocomplete="off">
+                </div>
+                <div class="modal-games-list" id="gamesList">
+                    <!-- Dynamic Games List -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

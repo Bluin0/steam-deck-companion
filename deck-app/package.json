@@ -1,0 +1,12 @@
+{
+  "name": "steam-deck-companion",
+  "version": "1.0.0",
+  "description": "Steam Deck Companion — Native Second Screen & Controller App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": ["steam-deck", "companion", "gamepad", "second-screen"],
+  "author": "Steam Deck Companion",
+  "license": "MIT"
+}
