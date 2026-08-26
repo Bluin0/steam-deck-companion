@@ -18,33 +18,37 @@ Segunda pantalla interactiva y mando virtual de baja latencia para tu Steam Deck
 
 ---
 
-## 📦 Compilación Local para subir a GitHub Releases
+## 📦 Compiladores por Sistema (`comp/`)
 
-### 1. Compilar Servidor PC (`.exe` para Windows / Binario para Linux)
-- **En Windows**: Haz doble clic en el archivo **`build_server.bat`**. Creará **`dist\SteamDeckCompanionServer.exe`**.
-- **En Linux**: Ejecuta `./build_server.sh`. Creará **`dist/SteamDeckCompanionServer`**.
+Todos los scripts de compilación están organizados en la carpeta **`comp/`**:
 
-> **Para el usuario final**: Solo hace doble clic en `SteamDeckCompanionServer.exe` para jugar (no necesita consola ni instalar Python).
+```
+comp/
+├── windows/       ➔ Compilador para Servidor PC Windows (.exe)
+├── linux/         ➔ Compilador para Servidor PC Linux (Binario ELF)
+└── steam-deck/    ➔ Compilador para App Steam Deck (AppImage / Zip)
+```
+
+### 1. 🖥️ Compilar Servidor PC Windows
+- Ve a la carpeta `comp/windows/` y haz doble clic en **`build_server.bat`**.
+- Genera el ejecutable en: **`dist/windows/SteamDeckCompanionServer.exe`**.
+
+### 2. 🐧 Compilar Servidor PC Linux
+- Ve a la carpeta `comp/linux/` y ejecuta **`./build_server.sh`**.
+- Genera el binario ELF en: **`dist/linux/SteamDeckCompanionServer`**.
+
+### 3. 🎮 Compilar App para Steam Deck
+- **Desde Linux/Deck**: Ve a `comp/steam-deck/` y ejecuta **`./build_deck_app.sh`**.
+- **Desde Windows**: Ve a `comp/steam-deck/` y haz doble clic en **`build_deck_app.bat`**.
+- Genera el archivo en: **`dist/steam-deck/`**.
 
 ---
 
-### 2. Compilar App de Steam Deck (`.AppImage` para SteamOS)
-- Ejecuta el script:
-  ```bash
-  ./build_deck_app.sh
-  ```
-  O entra en `deck-app/` y corre `npm run build:linux`.
-- El archivo ejecutable **`.AppImage`** se creará en **`deck-app/dist/`**.
-
----
-
-### 3. Subir a Releases en GitHub
-1. En tu repositorio de GitHub, ve a la pestaña **Releases** ➔ **"Draft a new release"**.
-2. Ponle una etiqueta de versión (ej. `v1.0.0`).
-3. Arrastra y suelta los archivos que has compilado:
-   - `SteamDeckCompanionServer.exe` (Servidor para Windows)
-   - `SteamDeckCompanion.AppImage` (Cliente para Steam Deck)
-4. Pulsa **"Publish release"**. ¡Cualquiera puede descargarlos y usarlos con 1 clic!
+### 📤 Subir a GitHub Releases
+1. Ve a la pestaña **Releases** de tu GitHub ➔ **"Draft a new release"**.
+2. Pon la etiqueta (ej: `v1.0.0`).
+3. Arrastra los archivos generados desde la carpeta `dist/`.
+4. Pulsa **"Publish release"**.
 
 ---
 
