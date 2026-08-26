@@ -8,10 +8,24 @@ let currentPcIp = localStorage.getItem('companion_pc_ip') || urlParams.get('pc_i
 const WS_PORT = 8765;
 const HTTP_PORT = 8080;
 
+const DEFAULT_PROFILE = {
+    appid: 'default',
+    name: 'General Profile',
+    tabs: [
+        { id: 'overview', name: 'Resumen', icon: '📋', type: 'overview' },
+        { id: 'map', name: 'Mapa', icon: '🗺️', type: 'web', url: 'https://mapgenie.io/{game_slug}' },
+        { id: 'wiki', name: 'Guías', icon: '📖', type: 'web', url: 'https://steamcommunity.com/app/{appid}/guides/' },
+        { id: 'hltb', name: 'HLTB', icon: '⏱️', type: 'web', url: 'https://howlongtobeat.com/?q={game_name}' },
+        { id: 'notes', name: 'Notas', icon: '📝', type: 'notes' },
+        { id: 'inputs', name: 'Mando', icon: '🎮', type: 'inputs' },
+        { id: 'browser', name: 'Google', icon: '🌐', type: 'web', url: 'https://www.google.com' }
+    ]
+};
+
 // State
 let ws = null;
 let currentGame = null;
-let currentProfile = null;
+let currentProfile = DEFAULT_PROFILE;
 let installedGames = [];
 let sessionStartTime = Date.now();
 let timerInterval = null;
@@ -592,7 +606,7 @@ gameSearchInput.addEventListener('input', (e) => {
         // 2. Query global Steam games through PC server
         let onlineMatches = [];
         try {
-            const resp = await fetch(`http://${PC_IP}:${HTTP_PORT}/api/search_games?q=${encodeURIComponent(rawQuery)}`);
+            const resp = await fetch(`http://${currentPcIp}:${HTTP_PORT}/api/search_games?q=${encodeURIComponent(rawQuery)}`);
             if (resp.ok) {
                 const data = await resp.json();
                 const seen = new Set(localMatches.map(m => m.appid));
@@ -836,10 +850,17 @@ document.querySelectorAll('.btn-scale').forEach(btn => {
 
 // ================= Init =================
 
-window.addEventListener('DOMContentLoaded', () => {
+function init() {
+    renderTabs();
     setUiScale(currentUiScale);
     setupWebview();
     connectWebSocket();
     startSessionTimer();
     requestAnimationFrame(pollGamepad);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
