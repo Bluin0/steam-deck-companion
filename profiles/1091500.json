@@ -1,6 +1,6 @@
 {
-  "appid": "default",
-  "name": "General Game Profile",
+  "appid": "1091500",
+  "name": "Cyberpunk 2077",
   "tabs": [
     {
       "id": "overview",
@@ -10,24 +10,24 @@
     },
     {
       "id": "map",
-      "name": "Mapa",
+      "name": "Mapa Night City",
       "icon": "🗺️",
       "type": "web",
-      "url": "https://mapgenie.io"
+      "url": "https://mapgenie.io/cyberpunk-2077/maps/night-city"
     },
     {
       "id": "wiki",
-      "name": "Guías",
+      "name": "Guía Vandal",
       "icon": "📖",
       "type": "web",
-      "url": "https://steamcommunity.com/app/{appid}/allguides/"
+      "url": "https://vandal.elespanol.com/guias/guia-cyberpunk-2077-trucos-consejos-y-secretos"
     },
     {
       "id": "hltb",
       "name": "HLTB",
       "icon": "⏱️",
       "type": "web",
-      "url": "https://howlongtobeat.com/?q={game_name}"
+      "url": "https://howlongtobeat.com/game/2127"
     },
     {
       "id": "notes",

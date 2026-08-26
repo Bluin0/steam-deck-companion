@@ -1,6 +1,6 @@
 {
-  "appid": "default",
-  "name": "General Game Profile",
+  "appid": "1245620",
+  "name": "ELDEN RING",
   "tabs": [
     {
       "id": "overview",
@@ -10,24 +10,24 @@
     },
     {
       "id": "map",
-      "name": "Mapa",
+      "name": "Mapa Interactivo",
       "icon": "🗺️",
       "type": "web",
-      "url": "https://mapgenie.io"
+      "url": "https://mapgenie.io/elden-ring/maps/the-lands-between"
     },
     {
       "id": "wiki",
-      "name": "Guías",
+      "name": "Guía Vandal",
       "icon": "📖",
       "type": "web",
-      "url": "https://steamcommunity.com/app/{appid}/allguides/"
+      "url": "https://vandal.elespanol.com/guias/guia-elden-ring-trucos-consejos-y-secretos"
     },
     {
       "id": "hltb",
       "name": "HLTB",
       "icon": "⏱️",
       "type": "web",
-      "url": "https://howlongtobeat.com/?q={game_name}"
+      "url": "https://howlongtobeat.com/game/68151"
     },
     {
       "id": "notes",

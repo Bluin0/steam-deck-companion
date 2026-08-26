@@ -212,14 +212,17 @@ function switchTab(tabId, forceReload = false) {
         if (webTabTitle) webTabTitle.textContent = tab.name || 'Visor Web';
 
         const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
+        const gAppId = (currentGame && currentGame.appid && currentGame.appid !== 'default') ? currentGame.appid : '';
         let resolvedUrl = tab.url || 'https://www.google.com';
 
-        if (gName) {
-            resolvedUrl = resolvedUrl.replace(/\{game_name\}/g, encodeURIComponent(gName));
+        if (gName || gAppId) {
+            resolvedUrl = resolvedUrl
+                .replace(/\{game_name\}/g, encodeURIComponent(gName))
+                .replace(/\{appid\}/g, encodeURIComponent(gAppId));
         } else {
             if (tab.id === 'hltb') resolvedUrl = 'https://howlongtobeat.com';
             else if (tab.id === 'map') resolvedUrl = 'https://mapgenie.io';
-            else if (tab.id === 'wiki') resolvedUrl = 'https://vandal.elespanol.com/guias/';
+            else if (tab.id === 'wiki') resolvedUrl = 'https://steamcommunity.com';
             else resolvedUrl = 'https://www.google.com';
         }
 
