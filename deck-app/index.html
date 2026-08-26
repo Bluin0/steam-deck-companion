@@ -29,12 +29,19 @@
                 <button class="btn-picker" id="btnOpenPicker" title="Seleccionar juego manualmente">
                     <span>🔍 Juegos</span>
                 </button>
-                <div class="connection-badge" id="connBadge">
+                <button class="connection-badge" id="connBadge" title="Toca para cambiar la IP del PC">
                     <span class="status-dot"></span>
                     <span class="status-text" id="connText">PC</span>
-                </div>
+                    <span class="settings-gear">⚙️</span>
+                </button>
             </div>
         </header>
+
+        <!-- Disconnect Quick Banner -->
+        <div class="disconnect-banner hidden" id="disconnectBanner">
+            <span>⚠️ Desconectado del PC</span>
+            <button class="btn-banner-action" id="btnBannerConfig">⚙️ Cambiar IP</button>
+        </div>
 
         <!-- Main Body: Sidebar + Active View -->
         <div class="dashboard-body">
@@ -214,6 +221,37 @@
                 </div>
                 <div class="modal-games-list" id="gamesList">
                     <!-- Dynamic Games List -->
+                </div>
+            </div>
+        <!-- Settings / IP Configuration Modal -->
+        <div class="modal-backdrop hidden" id="ipModal">
+            <div class="modal-card modal-card-sm">
+                <div class="modal-header">
+                    <h2>⚙️ Configuración del Servidor y Pantalla</h2>
+                    <button class="modal-close" id="btnCloseIpModal">✕</button>
+                </div>
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label for="serverIpInput">Dirección IP del PC de juegos:</label>
+                        <input type="text" id="serverIpInput" class="form-input" placeholder="Ej: 192.168.1.50" autocomplete="off" spellcheck="false">
+                        <span class="form-hint">Introduce la IP local de tu ordenador con el servidor iniciado.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Escalado de Interfaz (Tamaño en pantalla):</label>
+                        <div class="scale-options">
+                            <button type="button" class="btn-scale" data-scale="1.0">100%</button>
+                            <button type="button" class="btn-scale" data-scale="1.15">115%</button>
+                            <button type="button" class="btn-scale active" data-scale="1.25">125% (Deck)</button>
+                            <button type="button" class="btn-scale" data-scale="1.4">140%</button>
+                        </div>
+                    </div>
+
+                    <div class="ip-status-box" id="ipModalStatus"></div>
+
+                    <div class="modal-actions">
+                        <button class="btn-primary" id="btnSaveIp">💾 Guardar y Conectar</button>
+                    </div>
                 </div>
             </div>
         </div>

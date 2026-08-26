@@ -1,0 +1,108 @@
+name: Build & Release Executables
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-server-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Compile Server (.exe)
+        run: |
+          python scripts/build_server.py
+
+      - name: Upload Windows Server Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteamDeckCompanionServer-Windows
+          path: dist/SteamDeckCompanionServer.exe
+
+  build-server-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Compile Server (Linux Binary)
+        run: |
+          python3 scripts/build_server.py
+
+      - name: Upload Linux Server Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteamDeckCompanionServer-Linux
+          path: dist/SteamDeckCompanionServer
+
+  build-deck-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        working-directory: deck-app
+        run: |
+          npm install
+
+      - name: Build Steam Deck AppImage
+        working-directory: deck-app
+        run: |
+          npm run build:linux
+
+      - name: Upload Steam Deck AppImage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteamDeckCompanion-SteamDeck-AppImage
+          path: deck-app/dist/*.AppImage
+
+  create-release:
+    needs: [build-server-windows, build-server-linux, build-deck-appimage]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            SteamDeckCompanionServer-Windows/SteamDeckCompanionServer.exe
+            SteamDeckCompanionServer-Linux/SteamDeckCompanionServer
+            SteamDeckCompanion-SteamDeck-AppImage/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

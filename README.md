@@ -7,58 +7,48 @@ Segunda pantalla interactiva y mando virtual de baja latencia para tu Steam Deck
 ## ✨ Características
 
 - 🎯 **Detección Automática de Juegos**: Detecta el juego que estás jugando en tu PC (Steam o catálogo global) y adapta toda la interfaz al instante.
+- ⚙️ **Configuración de IP en la App**: Cambia la IP de tu PC de juegos directamente desde la pantalla táctil de la Steam Deck con 1 toque (sin terminales ni archivos de texto).
+- 🔍 **Escalado y Zoom para Steam Deck (7" 1280x800)**: Tipografías, botones e iconos agrandados para máxima legibilidad y confort táctil en modo portátil, con selector de escala (100% a 140%).
 - 🗺️ **Mapas Interactivos Directos**: Carga automáticamente el mapa interactivo (MapGenie, etc.) del juego activo con búsqueda inteligente de respaldo (cero errores 404).
 - 📖 **Guías Comunitarias y Wikis**: Guías de Steam o wikis en español (Vandal/Eliteguias) con un solo toque.
 - ⏱️ **HowLongToBeat**: Información de duración y estadísticas del juego sincronizadas.
 - 📝 **Bloc de Notas Persistente**: Toma apuntes, códigos y recetas que se guardan directamente en tu PC.
-- 🎮 **Mando Virtual y Visualizador**: Streaming de inputs a 0ms hacia un mando Xbox 360 virtual en tu PC (`ViGEmBus` en Windows o `uinput` en Linux) con pestaña de diagnóstico y calibración en tiempo real.
-- 🛡️ **App Nativa con Bloqueador de Anuncios**: Carga ultra-rápida, resolución adaptada a 1280x800 y controles de zoom táctil.
+- 🎮 **Mando Virtual y Diagnóstico**: Streaming de inputs a 0ms hacia un mando Xbox 360 virtual en tu PC (`ViGEmBus` en Windows o `uinput` en Linux) con pestaña de test y calibración en tiempo real.
+- 🛡️ **App Nativa con Bloqueador de Anuncios**: Carga ultra-rápida sin publicidad ni errores en consola.
 
 ---
 
-## 🚀 Guía Rápida
+## 📦 Compilación y Ejecutables Autónomos (Sin Comandos)
 
-### 1. En tu PC de Juegos (Servidor)
-> Compatible con **Windows** y **Linux**
+### 1. Servidor PC (`.exe` para Windows / Binario para Linux)
+Puedes compilar el servidor en un solo archivo ejecutable:
+- **En Windows**: Haz doble clic en el archivo **`build_server.bat`**. Se creará automáticamente **`dist\SteamDeckCompanionServer.exe`**.
+- **En Linux**: Ejecuta `./build_server.sh`.
+- *(También puedes descargarlo ya compilado desde la pestaña **Releases** de GitHub).*
 
-1. Clona el repositorio e instala las dependencias:
-   ```bash
-   git clone https://github.com/Bluin0/steam-deck-companion.git
-   cd steam-deck-companion
-   pip install -r requirements.txt
-   ```
-   *(En Windows, asegúrate de tener instalado el driver [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases)).*
-
-2. Inicia el servidor:
-   ```bash
-   python src/server/main.py
-   ```
-   *(Anota la IP local de tu PC, por ejemplo `192.168.1.100`)*.
+> **Para iniciarlo**: Simplemente haz doble clic en `SteamDeckCompanionServer.exe` en tu PC. ¡No requiere abrir terminales!
 
 ---
 
-### 2. En tu Steam Deck (Cliente Nativo)
+### 2. Cliente Steam Deck (`.AppImage` ejecutable para SteamOS)
+- **Compilar en Linux/Deck**:
+  ```bash
+  cd deck-app
+  npm install
+  npm run build:linux
+  ```
+  Se creará el archivo **`deck-app/dist/Steam Deck Companion-linux-x64.AppImage`**.
 
-Puedes instalar la aplicación en tu Steam Deck con **un solo comando**:
-
-1. En tu Steam Deck, cambia a **Modo Escritorio** (*Desktop Mode*).
-2. Abre la terminal **Konsole** y pega:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/Bluin0/steam-deck-companion/main/scripts/install_deck_app.sh | bash
-   ```
-3. Introduce la IP local de tu PC cuando te lo pida.
-
-#### Para añadirlo a la biblioteca de Gaming Mode:
-1. Abre Steam en Modo Escritorio.
-2. Pulsa abajo a la izquierda en **"Añadir un juego"** ➔ **"Añadir un producto que no es de Steam..."**.
-3. Selecciona **Steam Deck Companion** y pulsa *Añadir seleccionados*.
-4. ¡Vuelve a **Gaming Mode** y lánzalo como cualquier juego de tu biblioteca!
+- **Para añadirlo a Steam**:
+  1. Copia el archivo `.AppImage` a tu Steam Deck (ej: a tu carpeta personal o `~/Applications`).
+  2. En Steam (Modo Escritorio), pulsa **"Añadir un juego"** ➔ **"Añadir un producto que no es de Steam..."** ➔ Selecciona el `.AppImage`.
+  3. ¡Vuelve a **Gaming Mode** y lánzalo como cualquier juego!
 
 ---
 
-## 🛠️ Desarrollo y Pruebas en PC
+## ⚙️ Cambiar la IP del Servidor desde la Steam Deck
 
-Para probar la app de Steam Deck directamente en tu ordenador:
-```bash
-npx electron deck-app --pc-ip=127.0.0.1
-```
+1. Dentro de la app, pulsa el botón **`⚙️ PC`** situado en la esquina superior derecha (o el aviso rojo que aparece si no detecta conexión).
+2. Escribe la nueva IP local de tu PC de juegos (ej. `192.168.1.50`).
+3. Elige tu tamaño de interfaz preferido (`100%`, `115%`, `125%` o `140%`).
+4. Pulsa **"Guardar y Conectar"**. La app se reconecta al instante y guarda la configuración.

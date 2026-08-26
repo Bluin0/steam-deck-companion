@@ -2,12 +2,11 @@
  * Steam Deck Companion — Native App Client (Electron WebView)
  */
 
-// Determine PC IP
+// Determine PC IP & Ports
 const urlParams = new URLSearchParams(window.location.search);
-const PC_IP = urlParams.get('pc_ip') || window.location.hostname || '127.0.0.1';
+let currentPcIp = localStorage.getItem('companion_pc_ip') || urlParams.get('pc_ip') || window.location.hostname || '127.0.0.1';
 const WS_PORT = 8765;
 const HTTP_PORT = 8080;
-const wsUrl = `ws://${PC_IP}:${WS_PORT}`;
 
 // State
 let ws = null;
@@ -20,6 +19,8 @@ let notesSaveTimeout = null;
 let activeTabId = 'overview';
 let currentWebHomeUrl = 'https://www.google.com';
 let currentZoomFactor = 1.0;
+let reconnectTimer = null;
+let currentUiScale = parseFloat(localStorage.getItem('companion_ui_scale')) || 1.25;
 
 // DOM Elements
 const connBadge = document.getElementById('connBadge');
@@ -29,6 +30,8 @@ const gameCover = document.getElementById('gameCover');
 const gameCoverPlaceholder = document.getElementById('gameCoverPlaceholder');
 const sessionTimer = document.getElementById('sessionTimer');
 const sidebarTabs = document.getElementById('sidebarTabs');
+const disconnectBanner = document.getElementById('disconnectBanner');
+const btnBannerConfig = document.getElementById('btnBannerConfig');
 
 // Views
 const viewOverview = document.getElementById('view-overview');
@@ -51,24 +54,69 @@ const notesArea = document.getElementById('notesArea');
 const notesStatus = document.getElementById('notesStatus');
 const btnClearNotes = document.getElementById('btnClearNotes');
 
-// Modal Elements
+// Game Modal Elements
 const gameModal = document.getElementById('gameModal');
 const btnOpenPicker = document.getElementById('btnOpenPicker');
 const btnCloseModal = document.getElementById('btnCloseModal');
 const gameSearchInput = document.getElementById('gameSearchInput');
 const gamesList = document.getElementById('gamesList');
 
+// IP & Settings Modal Elements
+const ipModal = document.getElementById('ipModal');
+const serverIpInput = document.getElementById('serverIpInput');
+const btnCloseIpModal = document.getElementById('btnCloseIpModal');
+const btnSaveIp = document.getElementById('btnSaveIp');
+const ipModalStatus = document.getElementById('ipModalStatus');
+
+// ================= UI Scaling =================
+
+function setUiScale(scale) {
+    currentUiScale = scale;
+    document.documentElement.style.setProperty('--ui-scale', scale);
+    localStorage.setItem('companion_ui_scale', scale);
+    document.querySelectorAll('.btn-scale').forEach(btn => {
+        if (Math.abs(parseFloat(btn.dataset.scale) - scale) < 0.01) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
 // ================= WebSocket & State =================
 
-function connectWebSocket() {
+function connectWebSocket(targetIp = currentPcIp) {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    currentPcIp = targetIp.trim();
+    localStorage.setItem('companion_pc_ip', currentPcIp);
+
+    const wsUrl = `ws://${currentPcIp}:${WS_PORT}`;
     connText.textContent = 'PC...';
     connBadge.classList.remove('connected');
 
-    ws = new WebSocket(wsUrl);
+    if (ws) {
+        try {
+            ws.onclose = null;
+            ws.close();
+        } catch (e) {}
+    }
+
+    try {
+        ws = new WebSocket(wsUrl);
+    } catch (err) {
+        console.warn('[WS] Connection attempt failed:', err);
+        handleDisconnect();
+        return;
+    }
 
     ws.onopen = () => {
         connText.textContent = 'PC';
         connBadge.classList.add('connected');
+        if (disconnectBanner) disconnectBanner.classList.add('hidden');
+        if (ipModalStatus) {
+            ipModalStatus.className = 'ip-status-box success';
+            ipModalStatus.textContent = '✓ Conectado correctamente al PC';
+        }
         console.log('[WS] Connected to PC Companion server:', wsUrl);
     };
 
@@ -90,14 +138,24 @@ function connectWebSocket() {
     };
 
     ws.onclose = () => {
-        connText.textContent = 'Desconectado';
-        connBadge.classList.remove('connected');
-        setTimeout(connectWebSocket, 2000);
+        handleDisconnect();
     };
 
     ws.onerror = (err) => {
-        console.error('[WS] Socket error:', err);
+        console.warn('[WS] Socket warning:', err);
     };
+}
+
+function handleDisconnect() {
+    connText.textContent = 'Desconectado';
+    connBadge.classList.remove('connected');
+    if (disconnectBanner) disconnectBanner.classList.remove('hidden');
+    if (ipModalStatus && !ipModal.classList.contains('hidden')) {
+        ipModalStatus.className = 'ip-status-box error';
+        ipModalStatus.textContent = '⚠️ Sin conexión con ' + currentPcIp;
+    }
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => connectWebSocket(currentPcIp), 3000);
 }
 
 function handleGameUpdate(game, profile, notes) {
@@ -723,9 +781,63 @@ function pollGamepad() {
     requestAnimationFrame(pollGamepad);
 }
 
+// ================= IP / Settings Modal Handlers =================
+
+function openIpModal() {
+    serverIpInput.value = currentPcIp;
+    ipModalStatus.textContent = '';
+    ipModalStatus.className = 'ip-status-box';
+    ipModal.classList.remove('hidden');
+    serverIpInput.focus();
+}
+
+function closeIpModal() {
+    ipModal.classList.add('hidden');
+}
+
+if (connBadge) {
+    connBadge.addEventListener('click', openIpModal);
+}
+
+if (btnBannerConfig) {
+    btnBannerConfig.addEventListener('click', openIpModal);
+}
+
+if (btnCloseIpModal) {
+    btnCloseIpModal.addEventListener('click', closeIpModal);
+}
+
+if (btnSaveIp) {
+    btnSaveIp.addEventListener('click', () => {
+        const newIp = serverIpInput.value.trim();
+        if (!newIp) {
+            ipModalStatus.className = 'ip-status-box error';
+            ipModalStatus.textContent = 'Introduce una dirección IP válida.';
+            return;
+        }
+
+        ipModalStatus.className = 'ip-status-box pending';
+        ipModalStatus.textContent = `Conectando con ${newIp}...`;
+        connectWebSocket(newIp);
+        setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                setTimeout(closeIpModal, 800);
+            }
+        }, 1200);
+    });
+}
+
+document.querySelectorAll('.btn-scale').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const scale = parseFloat(btn.dataset.scale);
+        if (scale) setUiScale(scale);
+    });
+});
+
 // ================= Init =================
 
 window.addEventListener('DOMContentLoaded', () => {
+    setUiScale(currentUiScale);
     setupWebview();
     connectWebSocket();
     startSessionTimer();

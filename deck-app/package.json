@@ -4,9 +4,49 @@
   "description": "Steam Deck Companion — Native Second Screen & Controller App",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --linux AppImage",
+    "build:linux": "electron-builder --linux AppImage",
+    "build:dir": "electron-builder --linux dir",
+    "build:win": "electron-builder --win portable"
   },
-  "keywords": ["steam-deck", "companion", "gamepad", "second-screen"],
+  "build": {
+    "appId": "com.steamdeck.companion",
+    "productName": "Steam Deck Companion",
+    "artifactName": "${productName}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "style.css",
+      "app.js",
+      "package.json"
+    ]
+  },
+  "keywords": [
+    "steam-deck",
+    "companion",
+    "gamepad",
+    "second-screen"
+  ],
   "author": "Steam Deck Companion",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.3"
+  }
 }
