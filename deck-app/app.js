@@ -191,6 +191,54 @@ function renderTabs() {
     });
 }
 
+const KNOWN_MAPS = {
+    'cyberpunk-2077': 'https://mapgenie.io/cyberpunk-2077/maps/night-city',
+    'elden-ring': 'https://mapgenie.io/elden-ring/maps/the-lands-between',
+    'grand-theft-auto-v': 'https://mapgenie.io/grand-theft-auto-v/maps/los-santos',
+    'gta-v': 'https://mapgenie.io/grand-theft-auto-v/maps/los-santos',
+    'red-dead-redemption-2': 'https://mapgenie.io/red-dead-redemption-2/maps/world',
+    'rdr2': 'https://mapgenie.io/red-dead-redemption-2/maps/world',
+    'the-witcher-3-wild-hunt': 'https://mapgenie.io/the-witcher-3-wild-hunt/maps/velen-novigrad',
+    'the-witcher-3': 'https://mapgenie.io/the-witcher-3-wild-hunt/maps/velen-novigrad',
+    'skyrim': 'https://mapgenie.io/skyrim/maps/skyrim',
+    'the-elder-scrolls-v-skyrim': 'https://mapgenie.io/skyrim/maps/skyrim',
+    'the-elder-scrolls-v-skyrim-special-edition': 'https://mapgenie.io/skyrim/maps/skyrim',
+    'fallout-4': 'https://mapgenie.io/fallout-4/maps/commonwealth',
+    'fallout-new-vegas': 'https://mapgenie.io/fallout-new-vegas/maps/mojave-wasteland',
+    'fallout-76': 'https://mapgenie.io/fallout-76/maps/appalachia',
+    'starfield': 'https://mapgenie.io/starfield/maps/new-atlantis',
+    'baldurs-gate-3': 'https://mapgenie.io/baldurs-gate-3/maps/wilderness',
+    'hollow-knight': 'https://mapgenie.io/hollow-knight/maps/hallownest',
+    'palworld': 'https://mapgenie.io/palworld/maps/palpagos-islands',
+    'genshin-impact': 'https://mapgenie.io/genshin-impact/maps/teyvat',
+    'zelda-tears-of-the-kingdom': 'https://mapgenie.io/zelda-tears-of-the-kingdom/maps/hyrule',
+    'the-legend-of-zelda-tears-of-the-kingdom': 'https://mapgenie.io/zelda-tears-of-the-kingdom/maps/hyrule',
+    'zelda-breath-of-the-wild': 'https://mapgenie.io/zelda-breath-of-the-wild/maps/hyrule',
+    'the-legend-of-zelda-breath-of-the-wild': 'https://mapgenie.io/zelda-breath-of-the-wild/maps/hyrule',
+    'assassins-creed-valhalla': 'https://mapgenie.io/assassins-creed-valhalla/maps/england',
+    'dying-light-2': 'https://mapgenie.io/dying-light-2/maps/villedor',
+    'dying-light-2-stay-human': 'https://mapgenie.io/dying-light-2/maps/villedor',
+    'horizon-forbidden-west': 'https://mapgenie.io/horizon-forbidden-west/maps/forbidden-west',
+    'horizon-zero-dawn': 'https://mapgenie.io/horizon-zero-dawn/maps/world',
+    'ghost-of-tsushima': 'https://mapgenie.io/ghost-of-tsushima/maps/tsushima',
+    'days-gone': 'https://mapgenie.io/days-gone/maps/oregon',
+    'god-of-war-ragnarok': 'https://mapgenie.io/god-of-war-ragnarok/maps/midgard',
+    'god-of-war': 'https://mapgenie.io/god-of-war/maps/midgard',
+    'escape-from-tarkov': 'https://mapgenie.io/tarkov/maps/customs',
+    'tarkov': 'https://mapgenie.io/tarkov/maps/customs',
+    'dayz': 'https://mapgenie.io/dayz/maps/chernarus',
+    'sons-of-the-forest': 'https://mapgenie.io/sons-of-the-forest/maps/island',
+    'the-forest': 'https://mapgenie.io/the-forest/maps/island',
+    'sea-of-thieves': 'https://mapgenie.io/sea-of-thieves/maps/sea-of-thieves',
+    'stalker-2': 'https://mapgenie.io/stalker-2/maps/the-zone',
+    'stalker-2-heart-of-chornobyl': 'https://mapgenie.io/stalker-2/maps/the-zone',
+    'black-myth-wukong': 'https://mapgenie.io/black-myth-wukong/maps/black-wind-mountain',
+    'no-mans-sky': 'https://mapgenie.io/no-mans-sky/maps/euclid',
+    'borderlands-3': 'https://mapgenie.io/borderlands-3/maps/pandora',
+    'death-stranding': 'https://mapgenie.io/death-stranding/maps/eastern-region',
+    'subnautica': 'https://subnauticamap.io/'
+};
+
 function getGameSlug(name) {
     if (!name) return '';
     return name
@@ -199,6 +247,17 @@ function getGameSlug(name) {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
+}
+
+function resolveMapUrl(gameName, gameSlug) {
+    if (!gameSlug) return 'https://mapgenie.io';
+    if (KNOWN_MAPS[gameSlug]) return KNOWN_MAPS[gameSlug];
+    for (const [key, url] of Object.entries(KNOWN_MAPS)) {
+        if (gameSlug.includes(key) || key.includes(gameSlug)) {
+            return url;
+        }
+    }
+    return `https://www.google.com/search?q=${encodeURIComponent(gameName)}+mapa+interactivo+mapgenie`;
 }
 
 function switchTab(tabId, forceReload = false) {
@@ -229,7 +288,9 @@ function switchTab(tabId, forceReload = false) {
 
         let resolvedUrl = tab.url || 'https://www.google.com';
 
-        if (gName || gAppId) {
+        if (tab.id === 'map') {
+            resolvedUrl = resolveMapUrl(gName, gSlug);
+        } else if (gName || gAppId) {
             if (tab.id === 'wiki' && !isNumericAppId) {
                 resolvedUrl = `https://www.ign.com/search?q=${encodeURIComponent(gName)}+guide`;
             } else {
@@ -240,7 +301,6 @@ function switchTab(tabId, forceReload = false) {
             }
         } else {
             if (tab.id === 'hltb') resolvedUrl = 'https://howlongtobeat.com';
-            else if (tab.id === 'map') resolvedUrl = 'https://mapgenie.io';
             else if (tab.id === 'wiki') resolvedUrl = 'https://steamcommunity.com';
             else resolvedUrl = 'https://www.google.com';
         }
