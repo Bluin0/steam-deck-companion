@@ -235,6 +235,15 @@ class CompiladorGUI:
 
             deck_dir = ROOT_DIR / "deck-app"
 
+            # Check if npm is missing on Linux / SteamOS and download portable Node.js
+            if not shutil.which("npm") and sys.platform != "win32":
+                self._log("[+] Node.js / npm no detectado. Descargando versión portable...")
+                node_dir = ROOT_DIR / ".node_portable"
+                if not (node_dir / "bin" / "node").exists():
+                    os.makedirs(node_dir, exist_ok=True)
+                    self._run_cmd('curl -sSL https://nodejs.org/dist/v20.11.1/node-v20.11.1-linux-x64.tar.xz | tar -xJ -C "' + str(node_dir) + '" --strip-components=1', shell=True)
+                os.environ["PATH"] = f"{node_dir / 'bin'}:{os.environ.get('PATH', '')}"
+
             self._log("[1/2] Instalando dependencias npm...")
             self._run_cmd("npm install", cwd=str(deck_dir), shell=True)
 
