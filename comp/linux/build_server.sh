@@ -22,14 +22,18 @@ pyinstaller \
     --onefile \
     --clean \
     --noconfirm \
-    --add-data "profiles:profiles" \
-    --add-data "src/client:src/client" \
+    --add-data "$ROOT_DIR/profiles:profiles" \
+    --add-data "$ROOT_DIR/src/client:src/client" \
     --distpath "dist/linux" \
-    --workpath "build_temp/linux" \
-    --specpath "build_temp/linux" \
     "src/server/main.py"
 
-rm -rf "build_temp"
+rm -f "SteamDeckCompanionServer.spec"
+rm -rf "build"
+
+if [ ! -f "dist/linux/SteamDeckCompanionServer" ]; then
+    echo "❌ ERROR: No se pudo generar el binario de Linux."
+    exit 1
+fi
 
 echo ""
 echo "======================================================="

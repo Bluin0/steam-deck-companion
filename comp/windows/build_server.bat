@@ -18,14 +18,20 @@ python -m PyInstaller ^
     --onefile ^
     --clean ^
     --noconfirm ^
-    --add-data "profiles;profiles" ^
-    --add-data "src/client;src/client" ^
+    --add-data "%CD%\profiles;profiles" ^
+    --add-data "%CD%\src\client;src/client" ^
     --distpath "dist\windows" ^
-    --workpath "build_temp\win" ^
-    --specpath "build_temp\win" ^
     "src\server\main.py"
 
-if exist "build_temp" rmdir /s /q "build_temp"
+if exist "SteamDeckCompanionServer.spec" del "SteamDeckCompanionServer.spec"
+if exist "build" rmdir /s /q "build"
+
+if not exist "dist\windows\SteamDeckCompanionServer.exe" (
+    echo.
+    echo ❌ ERROR: No se pudo generar el archivo .exe.
+    pause
+    exit /b 1
+)
 
 echo.
 echo =======================================================
