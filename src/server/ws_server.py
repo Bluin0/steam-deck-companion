@@ -172,6 +172,7 @@ class CompanionServer:
                 {"id": "wiki", "name": "Guías", "icon": "📖", "type": "web", "url": "https://steamcommunity.com/app/{appid}/guides/"},
                 {"id": "hltb", "name": "HLTB", "icon": "⏱️", "type": "web", "url": "https://howlongtobeat.com/?q={game_name}"},
                 {"id": "notes", "name": "Notas", "icon": "📝", "type": "notes"},
+                {"id": "inputs", "name": "Mando", "icon": "🎮", "type": "inputs"},
                 {"id": "browser", "name": "Google", "icon": "🌐", "type": "web", "url": "https://www.google.com"}
             ]
         }

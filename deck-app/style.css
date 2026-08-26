@@ -600,3 +600,274 @@ body {
     color: #ff9500;
     border: 1px solid rgba(255, 149, 0, 0.3);
 }
+
+/* ================= Gamepad Input Tester ================= */
+#view-inputs {
+    padding: 1.25rem;
+    gap: 1rem;
+    display: none;
+    flex-direction: column;
+}
+
+#view-inputs.active {
+    display: flex;
+}
+
+.inputs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+
+.inputs-title-group h2 {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+}
+
+.inputs-status {
+    font-size: 0.8rem;
+    color: var(--accent-green);
+}
+
+.inputs-meta {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tag-success {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--accent-green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+}
+
+.controller-visualizer {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    flex: 1;
+}
+
+.ctrl-group {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.ctrl-group h3 {
+    font-size: 0.95rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.4rem;
+}
+
+/* Sticks */
+.sticks-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.stick-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.stick-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.stick-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--border-color);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.stick-crosshair-h {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.stick-crosshair-v {
+    position: absolute;
+    height: 100%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.stick-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    position: absolute;
+    box-shadow: 0 0 10px var(--accent-blue);
+    transition: transform 0.04s linear;
+}
+
+.stick-values {
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--text-secondary);
+}
+
+/* D-Pad & Triggers */
+.dpad-triggers-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.dpad-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.dpad-row {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.dpad-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all 0.1s ease;
+}
+
+.dpad-center {
+    width: 38px;
+    height: 38px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.dpad-btn.pressed {
+    background: var(--accent-cyan);
+    color: #000;
+    box-shadow: 0 0 12px var(--accent-cyan);
+}
+
+.triggers-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.trigger-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.trig-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    width: 55px;
+}
+
+.trig-bar-track {
+    flex: 1;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.trig-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+    border-radius: 6px;
+    transition: width 0.05s linear;
+}
+
+.trig-val {
+    font-size: 0.75rem;
+    font-family: monospace;
+    width: 35px;
+    text-align: right;
+}
+
+/* Face Buttons & Chips */
+.face-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.btn-indicator {
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    transition: all 0.08s ease;
+}
+
+.btn-a.pressed { background: #00e676; color: #000; box-shadow: 0 0 15px #00e676; }
+.btn-b.pressed { background: #ff3d71; color: #fff; box-shadow: 0 0 15px #ff3d71; }
+.btn-x.pressed { background: #1a9fff; color: #fff; box-shadow: 0 0 15px #1a9fff; }
+.btn-y.pressed { background: #ffc107; color: #000; box-shadow: 0 0 15px #ffc107; }
+
+.extra-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.btn-chip {
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-secondary);
+    transition: all 0.08s ease;
+}
+
+.btn-chip.pressed {
+    background: var(--accent-cyan);
+    color: #000;
+    box-shadow: 0 0 10px var(--accent-cyan);
+}

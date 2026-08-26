@@ -34,6 +34,7 @@ const sidebarTabs = document.getElementById('sidebarTabs');
 const viewOverview = document.getElementById('view-overview');
 const viewWeb = document.getElementById('view-web');
 const viewNotes = document.getElementById('view-notes');
+const viewInputs = document.getElementById('view-inputs');
 const webFrame = document.getElementById('webFrame');
 const webTabTitle = document.getElementById('webTabTitle');
 
@@ -259,16 +260,19 @@ function switchTab(tabId, forceReload = false) {
     if (!tab) return;
 
     // Hide all views
-    viewOverview.classList.remove('active');
-    viewWeb.classList.remove('active');
-    viewNotes.classList.remove('active');
+    if (viewOverview) viewOverview.classList.remove('active');
+    if (viewWeb) viewWeb.classList.remove('active');
+    if (viewNotes) viewNotes.classList.remove('active');
+    if (viewInputs) viewInputs.classList.remove('active');
 
     if (tab.type === 'overview') {
-        viewOverview.classList.add('active');
+        if (viewOverview) viewOverview.classList.add('active');
     } else if (tab.type === 'notes') {
-        viewNotes.classList.add('active');
+        if (viewNotes) viewNotes.classList.add('active');
+    } else if (tab.type === 'inputs') {
+        if (viewInputs) viewInputs.classList.add('active');
     } else if (tab.type === 'web') {
-        viewWeb.classList.add('active');
+        if (viewWeb) viewWeb.classList.add('active');
         if (webTabTitle) webTabTitle.textContent = tab.name || 'Visor Web';
 
         const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
@@ -577,6 +581,85 @@ function selectGame(appid, name) {
     gameModal.classList.add('hidden');
 }
 
+// ================= Inputs Visualizer =================
+
+const dotLS = document.getElementById('dotLS');
+const dotRS = document.getElementById('dotRS');
+const valLS = document.getElementById('valLS');
+const valRS = document.getElementById('valRS');
+const barLT = document.getElementById('barLT');
+const barRT = document.getElementById('barRT');
+const valLT = document.getElementById('valLT');
+const valRT = document.getElementById('valRT');
+const gpStatusText = document.getElementById('gpStatusText');
+const gpNameText = document.getElementById('gpNameText');
+
+const inputBtnMap = {
+    0: document.getElementById('btnA'),
+    1: document.getElementById('btnB'),
+    2: document.getElementById('btnX'),
+    3: document.getElementById('btnY'),
+    4: document.getElementById('btnLB'),
+    5: document.getElementById('btnRB'),
+    8: document.getElementById('btnBack'),
+    9: document.getElementById('btnStart'),
+    10: document.getElementById('btnL3'),
+    11: document.getElementById('btnR3'),
+    12: document.getElementById('btnDpadUp'),
+    13: document.getElementById('btnDpadDown'),
+    14: document.getElementById('btnDpadLeft'),
+    15: document.getElementById('btnDpadRight')
+};
+
+function updateInputsVisualizer(gp) {
+    if (!gp) return;
+
+    if (gpStatusText) gpStatusText.textContent = 'Mando Conectado ✓';
+    if (gpNameText) gpNameText.textContent = gp.id ? gp.id.substring(0, 30) : 'Gamepad';
+
+    // Buttons
+    for (let i = 0; i < gp.buttons.length; i++) {
+        const el = inputBtnMap[i];
+        if (el) {
+            const isPressed = typeof gp.buttons[i] === 'object' ? gp.buttons[i].pressed : gp.buttons[i] > 0.5;
+            if (isPressed) {
+                el.classList.add('pressed');
+            } else {
+                el.classList.remove('pressed');
+            }
+        }
+    }
+
+    // Triggers (6: LT, 7: RT)
+    if (gp.buttons[6] && barLT && valLT) {
+        const ltVal = typeof gp.buttons[6] === 'object' ? gp.buttons[6].value : gp.buttons[6];
+        const ltPct = Math.round(ltVal * 100);
+        barLT.style.width = ltPct + '%';
+        valLT.textContent = ltPct + '%';
+    }
+
+    if (gp.buttons[7] && barRT && valRT) {
+        const rtVal = typeof gp.buttons[7] === 'object' ? gp.buttons[7].value : gp.buttons[7];
+        const rtPct = Math.round(rtVal * 100);
+        barRT.style.width = rtPct + '%';
+        valRT.textContent = rtPct + '%';
+    }
+
+    // Joysticks
+    if (gp.axes.length >= 4) {
+        const lx = gp.axes[0];
+        const ly = gp.axes[1];
+        const rx = gp.axes[2];
+        const ry = gp.axes[3];
+
+        if (dotLS) dotLS.style.transform = `translate(${lx * 30}px, ${ly * 30}px)`;
+        if (valLS) valLS.textContent = `X: ${lx.toFixed(2)} | Y: ${ly.toFixed(2)}`;
+
+        if (dotRS) dotRS.style.transform = `translate(${rx * 30}px, ${ry * 30}px)`;
+        if (valRS) valRS.textContent = `X: ${rx.toFixed(2)} | Y: ${ry.toFixed(2)}`;
+    }
+}
+
 // ================= Background Gamepad Input Forwarding =================
 
 function pollGamepad() {
@@ -590,14 +673,20 @@ function pollGamepad() {
         }
     }
 
-    if (activeGamepad && ws && ws.readyState === WebSocket.OPEN) {
-        const rawButtons = activeGamepad.buttons.map(b => (typeof b === 'object' ? (b.pressed ? (b.value || 1) : 0) : b));
-        const rawAxes = activeGamepad.axes.map(a => Math.abs(a) < 0.08 ? 0 : a);
+    if (activeGamepad) {
+        if (activeTabId === 'inputs') {
+            updateInputsVisualizer(activeGamepad);
+        }
 
-        ws.send(JSON.stringify({
-            type: 'input',
-            state: { buttons: rawButtons, axes: rawAxes }
-        }));
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            const rawButtons = activeGamepad.buttons.map(b => (typeof b === 'object' ? (b.pressed ? (b.value || 1) : 0) : b));
+            const rawAxes = activeGamepad.axes.map(a => Math.abs(a) < 0.08 ? 0 : a);
+
+            ws.send(JSON.stringify({
+                type: 'input',
+                state: { buttons: rawButtons, axes: rawAxes }
+            }));
+        }
     }
 
     requestAnimationFrame(pollGamepad);

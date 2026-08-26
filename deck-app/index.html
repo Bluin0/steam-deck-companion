@@ -109,6 +109,96 @@
                     </div>
                     <textarea id="notesArea" class="notes-textarea" placeholder="Escribe aquí tus apuntes, misiones pendientes, combinaciones o recetas... Se guardan automáticamente en tu PC."></textarea>
                 </div>
+
+                <!-- Gamepad Input Tester View -->
+                <div class="tab-view" id="view-inputs">
+                    <div class="inputs-header">
+                        <div class="inputs-title-group">
+                            <h2>🎮 Diagnóstico y Test del Mando</h2>
+                            <span class="inputs-status" id="gpStatusText">Esperando mando...</span>
+                        </div>
+                        <div class="inputs-meta">
+                            <span class="tag" id="gpNameText">Steam Deck Controller</span>
+                            <span class="tag tag-success" id="gpRateText">60-120 Hz / 0ms</span>
+                        </div>
+                    </div>
+
+                    <div class="controller-visualizer">
+                        <!-- Left Controls (D-Pad & Left Stick) -->
+                        <div class="ctrl-group">
+                            <h3>Sticks Analógicos</h3>
+                            <div class="sticks-grid">
+                                <div class="stick-box">
+                                    <span class="stick-label">Stick Izquierdo (LS)</span>
+                                    <div class="stick-circle">
+                                        <div class="stick-crosshair-h"></div>
+                                        <div class="stick-crosshair-v"></div>
+                                        <div class="stick-dot" id="dotLS"></div>
+                                    </div>
+                                    <div class="stick-values" id="valLS">X: 0.00 | Y: 0.00</div>
+                                </div>
+                                <div class="stick-box">
+                                    <span class="stick-label">Stick Derecho (RS)</span>
+                                    <div class="stick-circle">
+                                        <div class="stick-crosshair-h"></div>
+                                        <div class="stick-crosshair-v"></div>
+                                        <div class="stick-dot" id="dotRS"></div>
+                                    </div>
+                                    <div class="stick-values" id="valRS">X: 0.00 | Y: 0.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Center & D-Pad Controls -->
+                        <div class="ctrl-group">
+                            <h3>Cruceta (D-Pad) y Gatillos</h3>
+                            <div class="dpad-triggers-grid">
+                                <div class="dpad-box">
+                                    <div class="dpad-btn" id="btnDpadUp">▲</div>
+                                    <div class="dpad-row">
+                                        <div class="dpad-btn" id="btnDpadLeft">◄</div>
+                                        <div class="dpad-center"></div>
+                                        <div class="dpad-btn" id="btnDpadRight">►</div>
+                                    </div>
+                                    <div class="dpad-btn" id="btnDpadDown">▼</div>
+                                </div>
+
+                                <div class="triggers-box">
+                                    <div class="trigger-row">
+                                        <span class="trig-label">LT (Izq)</span>
+                                        <div class="trig-bar-track"><div class="trig-bar" id="barLT"></div></div>
+                                        <span class="trig-val" id="valLT">0%</span>
+                                    </div>
+                                    <div class="trigger-row">
+                                        <span class="trig-label">RT (Der)</span>
+                                        <div class="trig-bar-track"><div class="trig-bar" id="barRT"></div></div>
+                                        <span class="trig-val" id="valRT">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Face Buttons (ABXY + Bumpers + Special) -->
+                        <div class="ctrl-group">
+                            <h3>Botones de Acción (ABXY)</h3>
+                            <div class="face-buttons-grid">
+                                <div class="btn-indicator btn-a" id="btnA">A</div>
+                                <div class="btn-indicator btn-b" id="btnB">B</div>
+                                <div class="btn-indicator btn-x" id="btnX">X</div>
+                                <div class="btn-indicator btn-y" id="btnY">Y</div>
+                            </div>
+
+                            <div class="extra-buttons-grid">
+                                <div class="btn-chip" id="btnLB">LB (L1)</div>
+                                <div class="btn-chip" id="btnRB">RB (R1)</div>
+                                <div class="btn-chip" id="btnBack">VIEW</div>
+                                <div class="btn-chip" id="btnStart">MENU</div>
+                                <div class="btn-chip" id="btnL3">L3</div>
+                                <div class="btn-chip" id="btnR3">R3</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
 
