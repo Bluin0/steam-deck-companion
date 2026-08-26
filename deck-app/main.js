@@ -6,6 +6,7 @@ const fs = require('fs');
 if (process.platform === 'linux') {
     app.commandLine.appendSwitch('no-sandbox');
     app.commandLine.appendSwitch('disable-gpu-sandbox');
+    app.commandLine.appendSwitch('disable-setuid-sandbox');
 }
 
 let mainWindow = null;
@@ -39,9 +40,12 @@ function getPcIp() {
     return '127.0.0.1';
 }
 
-function createWindow() {
-    const pcIp = getPcIp();
+// Synchronous IPC handler for renderer to get initial PC IP
+ipcMain.on('get-pc-ip', (event) => {
+    event.returnValue = getPcIp();
+});
 
+function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
@@ -64,7 +68,6 @@ function createWindow() {
     // Strip frame restrictions and block heavy ad/tracking domains on the webview partition session
     const partitionSession = session.fromPartition('persist:companion');
 
-    // Block invasive ad/tracking domains so pages load faster and don't spit console errors
     const blockedTrackerPatterns = [
         '*://*.doubleclick.net/*',
         '*://*.googlesyndication.com/*',
@@ -95,8 +98,18 @@ function createWindow() {
         callback({ cancel: false, responseHeaders });
     });
 
-    mainWindow.loadFile(path.join(__dirname, 'index.html'), {
-        query: { pc_ip: pcIp }
+    // Load clean index.html path without query parameters to prevent ASAR lookup failure
+    mainWindow.loadFile(path.join(__dirname, 'index.html'));
+
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+        console.error('[WebContents] Load failed:', errorCode, errorDescription, validatedURL);
+    });
+
+    // F12 or Ctrl+Shift+I toggles DevTools for easy debugging
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+            mainWindow.webContents.toggleDevTools();
+        }
     });
 
     mainWindow.on('closed', () => {
@@ -116,7 +129,7 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-// Silence benign navigation aborts (e.g. switching tabs while page is still loading or 302 redirects)
+// Silence benign navigation aborts
 process.on('unhandledRejection', (reason) => {
     const strReason = String(reason || '');
     if (reason && (reason.errno === -3 || reason.code === 'ERR_ABORTED' || strReason.includes('ERR_ABORTED') || strReason.includes('-3'))) {

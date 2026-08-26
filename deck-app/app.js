@@ -3,8 +3,16 @@
  */
 
 // Determine PC IP & Ports
-const urlParams = new URLSearchParams(window.location.search);
-let currentPcIp = localStorage.getItem('companion_pc_ip') || urlParams.get('pc_ip') || window.location.hostname || '127.0.0.1';
+let currentPcIp = localStorage.getItem('companion_pc_ip');
+if (!currentPcIp && window.deckApp && typeof window.deckApp.getPcIp === 'function') {
+    try {
+        currentPcIp = window.deckApp.getPcIp();
+    } catch (e) {}
+}
+if (!currentPcIp) {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentPcIp = urlParams.get('pc_ip') || window.location.hostname || '127.0.0.1';
+}
 const WS_PORT = 8765;
 const HTTP_PORT = 8080;
 
