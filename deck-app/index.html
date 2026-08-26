@@ -80,17 +80,20 @@
                             <button class="btn-nav" id="btnWebReload" title="Recargar">🔄</button>
                             <button class="btn-nav" id="btnWebHome" title="Inicio">🏠</button>
                         </div>
-                        <span class="web-view-title" id="webTabTitle">Visor Web</span>
+                        <div class="web-title-wrapper">
+                            <span class="web-view-title" id="webTabTitle">Visor Web</span>
+                            <div class="mini-spinner hidden" id="webviewSpinner"></div>
+                        </div>
                         <div class="web-view-actions">
-                            <button class="btn-action" id="btnWebZoomIn" title="Aumentar zoom">A+</button>
                             <button class="btn-action" id="btnWebZoomOut" title="Reducir zoom">A-</button>
+                            <button class="btn-action" id="btnWebZoomReset" title="Zoom normal">100%</button>
+                            <button class="btn-action" id="btnWebZoomIn" title="Aumentar zoom">A+</button>
                         </div>
                     </div>
+                    <div class="web-progress-bar-track">
+                        <div class="web-progress-bar" id="webviewProgressBar"></div>
+                    </div>
                     <div class="webview-container">
-                        <div class="iframe-loader" id="webviewLoader">
-                            <div class="spinner"></div>
-                            <span>Cargando contenido...</span>
-                        </div>
                         <webview id="webFrame" class="web-view-tag" partition="persist:companion" allowpopups></webview>
                     </div>
                 </div>

@@ -35,16 +35,7 @@ const viewOverview = document.getElementById('view-overview');
 const viewWeb = document.getElementById('view-web');
 const viewNotes = document.getElementById('view-notes');
 const webFrame = document.getElementById('webFrame');
-const webviewLoader = document.getElementById('webviewLoader');
 const webTabTitle = document.getElementById('webTabTitle');
-
-// Webview Controls
-const btnWebBack = document.getElementById('btnWebBack');
-const btnWebForward = document.getElementById('btnWebForward');
-const btnWebReload = document.getElementById('btnWebReload');
-const btnWebHome = document.getElementById('btnWebHome');
-const btnWebZoomIn = document.getElementById('btnWebZoomIn');
-const btnWebZoomOut = document.getElementById('btnWebZoomOut');
 
 // Overview Elements
 const overviewTitle = document.getElementById('overviewTitle');
@@ -309,7 +300,7 @@ function switchTab(tabId, forceReload = false) {
 
         try {
             if (forceReload || webFrame.getAttribute('src') !== resolvedUrl) {
-                webviewLoader.classList.add('active');
+                startWebLoading();
                 if (webFrame.loadURL) {
                     webFrame.loadURL(resolvedUrl);
                 } else {
@@ -322,23 +313,64 @@ function switchTab(tabId, forceReload = false) {
     }
 }
 
+// Webview Controls
+const btnWebBack = document.getElementById('btnWebBack');
+const btnWebForward = document.getElementById('btnWebForward');
+const btnWebReload = document.getElementById('btnWebReload');
+const btnWebHome = document.getElementById('btnWebHome');
+const btnWebZoomIn = document.getElementById('btnWebZoomIn');
+const btnWebZoomOut = document.getElementById('btnWebZoomOut');
+const btnWebZoomReset = document.getElementById('btnWebZoomReset');
+const webviewProgressBar = document.getElementById('webviewProgressBar');
+const webviewSpinner = document.getElementById('webviewSpinner');
+
+let progressTimer = null;
+let safetyHideTimer = null;
+
+function startWebLoading() {
+    if (webviewSpinner) webviewSpinner.classList.remove('hidden');
+    if (webviewProgressBar) {
+        webviewProgressBar.classList.remove('done');
+        webviewProgressBar.classList.add('loading');
+        webviewProgressBar.style.width = '35%';
+        if (progressTimer) clearTimeout(progressTimer);
+        progressTimer = setTimeout(() => {
+            if (webviewProgressBar) webviewProgressBar.style.width = '80%';
+        }, 180);
+    }
+
+    // Safety timeout: dismiss after 1.8s so it never gets stuck
+    if (safetyHideTimer) clearTimeout(safetyHideTimer);
+    safetyHideTimer = setTimeout(stopWebLoading, 1800);
+}
+
+function stopWebLoading() {
+    if (progressTimer) clearTimeout(progressTimer);
+    if (safetyHideTimer) clearTimeout(safetyHideTimer);
+    if (webviewSpinner) webviewSpinner.classList.add('hidden');
+    if (webviewProgressBar) {
+        webviewProgressBar.style.width = '100%';
+        webviewProgressBar.classList.add('done');
+        setTimeout(() => {
+            webviewProgressBar.classList.remove('loading', 'done');
+            webviewProgressBar.style.width = '0%';
+        }, 350);
+    }
+}
+
 // ================= Native WebView Setup =================
 
 function setupWebview() {
     if (!webFrame) return;
 
-    webFrame.addEventListener('did-start-loading', () => {
-        webviewLoader.classList.add('active');
-    });
-
-    webFrame.addEventListener('did-stop-loading', () => {
-        webviewLoader.classList.remove('active');
-    });
-
+    webFrame.addEventListener('did-start-loading', startWebLoading);
+    webFrame.addEventListener('dom-ready', stopWebLoading);
+    webFrame.addEventListener('did-stop-loading', stopWebLoading);
+    webFrame.addEventListener('did-finish-load', stopWebLoading);
     webFrame.addEventListener('did-fail-load', (e) => {
-        if (e.errorCode !== -3) { // Ignore aborted loads
-            webviewLoader.classList.remove('active');
-            console.warn('[WebView] Load failed:', e);
+        stopWebLoading();
+        if (e.errorCode !== -3) {
+            console.warn('[WebView] Load warning:', e);
         }
     });
 
@@ -390,6 +422,15 @@ if (btnWebZoomOut) {
         if (webFrame) {
             currentZoomFactor = Math.max(0.6, currentZoomFactor - 0.1);
             webFrame.setZoomFactor(currentZoomFactor);
+        }
+    });
+}
+
+if (btnWebZoomReset) {
+    btnWebZoomReset.addEventListener('click', () => {
+        if (webFrame) {
+            currentZoomFactor = 1.0;
+            webFrame.setZoomFactor(1.0);
         }
     });
 }
