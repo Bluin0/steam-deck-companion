@@ -55,9 +55,51 @@ if [ ! -f "dist/linux/SteamDeckCompanionServer" ]; then
     exit 1
 fi
 
+chmod +x "dist/linux/SteamDeckCompanionServer"
+
+# Create double-clickable launcher scripts with visible terminal window
+cat << 'EOF' > "dist/linux/iniciar_servidor.sh"
+#!/usr/bin/env bash
+cd "$(dirname "$0")"
+
+# Open terminal if running from GUI file manager
+if [ ! -t 0 ]; then
+    if command -v konsole >/dev/null 2>&1; then
+        exec konsole -e "$0" "$@"
+    elif command -v gnome-terminal >/dev/null 2>&1; then
+        exec gnome-terminal -- "$0" "$@"
+    elif command -v xterm >/dev/null 2>&1; then
+        exec xterm -e "$0" "$@"
+    fi
+fi
+
+echo "=========================================="
+echo "      STEAM DECK COMPANION SERVER         "
+echo "=========================================="
+./SteamDeckCompanionServer
+echo ""
+echo "Presiona Enter para cerrar..."
+read
+EOF
+
+chmod +x "dist/linux/iniciar_servidor.sh"
+
+cat << EOF > "dist/linux/Iniciar_Servidor.desktop"
+[Desktop Entry]
+Type=Application
+Name=Iniciar Servidor Steam Deck Companion
+Exec=bash -c "cd '\$(dirname \"\$(readlink -f \"\$0\")\")' && ./iniciar_servidor.sh"
+Icon=utilities-terminal
+Terminal=true
+Categories=Utility;Game;
+EOF
+
+chmod +x "dist/linux/Iniciar_Servidor.desktop"
+
 echo ""
 echo "======================================================="
 echo "   ✅ ¡SERVIDOR LINUX COMPILADO CON ÉXITO!"
-echo "   📂 Archivo listo para Releases en:"
-echo "      dist/linux/SteamDeckCompanionServer"
+echo "   📂 Archivos listos en dist/linux/:"
+echo "      - SteamDeckCompanionServer (Binario ejecutable)"
+echo "      - iniciar_servidor.sh (Doble clic para abrir ventana)"
 echo "======================================================="
