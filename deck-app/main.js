@@ -2,14 +2,10 @@ const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-// ── Gamescope / Gaming Mode compatibility (Steam Deck) ──
-// These flags are required for Electron to render properly inside
-// Gamescope (the compositor used in Steam Deck Gaming Mode).
+// ── SteamOS / Linux Compatibility ──
 if (process.platform === 'linux') {
     app.commandLine.appendSwitch('no-sandbox');
     app.commandLine.appendSwitch('disable-gpu-sandbox');
-    app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
-    app.commandLine.appendSwitch('in-process-gpu');
 }
 
 let mainWindow = null;
@@ -53,7 +49,6 @@ function createWindow() {
         minHeight: 600,
         backgroundColor: '#0a0d14',
         fullscreen: process.platform === 'linux',
-        kiosk: process.platform === 'linux',
         autoHideMenuBar: true,
         frame: false,
         webPreferences: {
