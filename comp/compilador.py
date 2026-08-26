@@ -231,34 +231,50 @@ class CompiladorGUI:
 
         def _task():
             self._set_card_status("deck", "🔄 Compilando...", self.YELLOW)
-            self._log("\n══════ COMPILANDO APP STEAM DECK (.AppImage) ══════")
+            self._log("\n══════ COMPILANDO APP STEAM DECK ══════")
 
             deck_dir = ROOT_DIR / "deck-app"
 
             self._log("[1/2] Instalando dependencias npm...")
             self._run_cmd("npm install", cwd=str(deck_dir), shell=True)
 
-            self._log("[2/2] Generando .AppImage...")
-            ok = self._run_cmd("npx electron-builder --linux AppImage",
-                               cwd=str(deck_dir), shell=True)
+            self._log("[2/2] Empaquetando aplicación para SteamOS...")
+            # Run electron-builder for zip and AppImage
+            self._run_cmd("npx electron-builder --linux zip AppImage",
+                          cwd=str(deck_dir), shell=True)
+
+            # Check if WSL is available to produce native AppImage if Windows mksquashfs failed
+            if sys.platform == "win32" and shutil.which("wsl"):
+                try:
+                    self._log("[+] WSL detectado. Intentando generar .AppImage nativo...")
+                    self._run_cmd('wsl bash -c "cd $(wslpath -u \'' + str(deck_dir).replace('\\', '/') + '\') && npx electron-builder --linux AppImage"', shell=True)
+                except Exception:
+                    pass
 
             os.makedirs(ROOT_DIR / "dist" / "steam-deck", exist_ok=True)
 
-            # Copy generated AppImage
+            # Copy generated artifacts
             dist_deck = deck_dir / "dist"
-            found = False
+            found_appimage = False
+            found_zip = False
             if dist_deck.exists():
                 for f in dist_deck.iterdir():
                     if f.suffix == ".AppImage":
                         shutil.copy2(f, ROOT_DIR / "dist" / "steam-deck" / f.name)
-                        found = True
+                        found_appimage = True
+                        self._log(f"[OK] dist/steam-deck/{f.name}")
+                    elif f.suffix == ".zip":
+                        shutil.copy2(f, ROOT_DIR / "dist" / "steam-deck" / f.name)
+                        found_zip = True
                         self._log(f"[OK] dist/steam-deck/{f.name}")
 
-            if found:
-                self._set_card_status("deck", "✅ Compilado", self.GREEN)
+            if found_appimage:
+                self._set_card_status("deck", "✅ Compilado (.AppImage)", self.GREEN)
+            elif found_zip:
+                self._set_card_status("deck", "✅ Compilado (.zip)", self.GREEN)
+                self._log("ℹ️  Se ha generado el paquete portable .zip para Steam Deck.")
             else:
-                self._set_card_status("deck", "❌ Error (ver log)", self.RED)
-                self._log("[!] No se generó .AppImage. ¿Ejecutaste como Administrador?")
+                self._set_card_status("deck", "❌ Error", self.RED)
 
             self.building = False
             self._set_buttons_state(True)
@@ -369,22 +385,32 @@ class CompiladorGUI:
 
             # 2. Steam Deck App
             self._set_card_status("deck", "🔄 Compilando...", self.YELLOW)
-            self._log("\n══════ [2/3] APP STEAM DECK (.AppImage) ══════")
+            self._log("\n══════ [2/3] APP STEAM DECK ══════")
             deck_dir = ROOT_DIR / "deck-app"
             self._run_cmd("npm install", cwd=str(deck_dir), shell=True)
-            self._run_cmd("npx electron-builder --linux AppImage",
+            self._run_cmd("npx electron-builder --linux zip AppImage",
                           cwd=str(deck_dir), shell=True)
+
+            if sys.platform == "win32" and shutil.which("wsl"):
+                try:
+                    self._run_cmd('wsl bash -c "cd $(wslpath -u \'' + str(deck_dir).replace('\\', '/') + '\') && npx electron-builder --linux AppImage"', shell=True)
+                except Exception:
+                    pass
 
             os.makedirs(ROOT_DIR / "dist" / "steam-deck", exist_ok=True)
             found_appimage = False
+            found_zip = False
             dist_deck = deck_dir / "dist"
             if dist_deck.exists():
                 for f in dist_deck.iterdir():
                     if f.suffix == ".AppImage":
                         shutil.copy2(f, ROOT_DIR / "dist" / "steam-deck" / f.name)
                         found_appimage = True
+                    elif f.suffix == ".zip":
+                        shutil.copy2(f, ROOT_DIR / "dist" / "steam-deck" / f.name)
+                        found_zip = True
 
-            if found_appimage:
+            if found_appimage or found_zip:
                 self._set_card_status("deck", "✅ Compilado", self.GREEN)
             else:
                 self._set_card_status("deck", "❌ Error", self.RED)
