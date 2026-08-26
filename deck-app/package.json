@@ -5,21 +5,23 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --linux AppImage",
-    "build:linux": "electron-builder --linux AppImage",
+    "build": "electron-builder --linux zip tar.gz AppImage",
+    "build:linux": "electron-builder --linux zip tar.gz",
+    "build:appimage": "electron-builder --linux AppImage",
     "build:dir": "electron-builder --linux dir",
     "build:win": "electron-builder --win portable"
   },
   "build": {
     "appId": "com.steamdeck.companion",
-    "productName": "Steam Deck Companion",
+    "productName": "SteamDeckCompanion",
     "artifactName": "${productName}-${os}-${arch}.${ext}",
     "directories": {
       "output": "dist"
     },
     "linux": {
       "target": [
-        "AppImage"
+        "zip",
+        "tar.gz"
       ],
       "category": "Game"
     },
