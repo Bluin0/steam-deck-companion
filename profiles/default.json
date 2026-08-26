@@ -13,14 +13,14 @@
       "name": "Mapa",
       "icon": "🗺️",
       "type": "web",
-      "url": "https://mapgenie.io/search?q={game_name}"
+      "url": "https://www.google.com/search?q=mapa+interactivo+mapgenie+{game_name}"
     },
     {
       "id": "wiki",
       "name": "Wiki / Guía",
       "icon": "📖",
       "type": "web",
-      "url": "https://vandal.elespanol.com/buscar/?q={game_name}+guia"
+      "url": "https://www.google.com/search?q=guia+vandal+{game_name}"
     },
     {
       "id": "hltb",

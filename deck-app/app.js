@@ -109,7 +109,7 @@ function connectWebSocket() {
 }
 
 function handleGameUpdate(game, profile, notes) {
-    const isNewGame = !currentGame || (game && currentGame.appid !== game.appid);
+    const isNewGame = !currentGame || (game && currentGame.appid !== (game ? game.appid : null));
     currentGame = game;
     currentProfile = profile;
 
@@ -123,9 +123,11 @@ function handleGameUpdate(game, profile, notes) {
         notesArea.value = notes || '';
     }
 
-    // Default to Overview if active tab is not in profile
-    if (!profile.tabs.find(t => t.id === activeTabId)) {
+    if (currentProfile && currentProfile.tabs && !currentProfile.tabs.find(t => t.id === activeTabId)) {
         switchTab('overview');
+    } else if (isNewGame && activeTabId !== 'overview' && activeTabId !== 'notes') {
+        // Automatically update current web view to the new game!
+        switchTab(activeTabId, true);
     }
 }
 
@@ -189,7 +191,7 @@ function renderTabs() {
     });
 }
 
-function switchTab(tabId) {
+function switchTab(tabId, forceReload = false) {
     activeTabId = tabId;
     renderTabs();
 
@@ -210,11 +212,29 @@ function switchTab(tabId) {
         if (webTabTitle) webTabTitle.textContent = tab.name || 'Visor Web';
 
         const gName = (currentGame && currentGame.name && currentGame.name !== 'Sin juego detectado') ? currentGame.name : '';
-        const resolvedUrl = (tab.url || '').replace(/\{game_name\}/g, encodeURIComponent(gName));
+        let resolvedUrl = tab.url || 'https://www.google.com';
+
+        if (gName) {
+            resolvedUrl = resolvedUrl.replace(/\{game_name\}/g, encodeURIComponent(gName));
+        } else {
+            if (tab.id === 'hltb') resolvedUrl = 'https://howlongtobeat.com';
+            else if (tab.id === 'map') resolvedUrl = 'https://mapgenie.io';
+            else if (tab.id === 'wiki') resolvedUrl = 'https://vandal.elespanol.com/guias/';
+            else resolvedUrl = 'https://www.google.com';
+        }
+
         currentWebHomeUrl = resolvedUrl;
 
-        if (webFrame.getAttribute('src') !== resolvedUrl) {
-            webviewLoader.classList.add('active');
+        try {
+            if (forceReload || webFrame.getAttribute('src') !== resolvedUrl) {
+                webviewLoader.classList.add('active');
+                if (webFrame.loadURL) {
+                    webFrame.loadURL(resolvedUrl);
+                } else {
+                    webFrame.setAttribute('src', resolvedUrl);
+                }
+            }
+        } catch (err) {
             webFrame.setAttribute('src', resolvedUrl);
         }
     }

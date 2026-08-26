@@ -162,11 +162,11 @@ class CompanionServer:
             "name": "General Profile",
             "tabs": [
                 {"id": "overview", "name": "Resumen", "icon": "📋", "type": "overview"},
-                {"id": "map", "name": "Mapa", "icon": "🗺️", "type": "web", "url": "https://mapgenie.io/search?q={game_name}", "direct_url": "https://mapgenie.io/search?q={game_name}"},
-                {"id": "wiki", "name": "Wiki / Guía", "icon": "📖", "type": "web", "url": "https://www.google.com/search?igu=1&q=guia+vandal+{game_name}", "direct_url": "https://vandal.elespanol.com/buscar/?q={game_name}+guia"},
-                {"id": "hltb", "name": "HLTB", "icon": "⏱️", "type": "web", "url": "https://www.google.com/search?igu=1&q=howlongtobeat+{game_name}", "direct_url": "https://howlongtobeat.com/?q={game_name}"},
+                {"id": "map", "name": "Mapa", "icon": "🗺️", "type": "web", "url": "https://www.google.com/search?q=mapa+interactivo+mapgenie+{game_name}"},
+                {"id": "wiki", "name": "Wiki / Guía", "icon": "📖", "type": "web", "url": "https://www.google.com/search?q=guia+vandal+{game_name}"},
+                {"id": "hltb", "name": "HLTB", "icon": "⏱️", "type": "web", "url": "https://howlongtobeat.com/?q={game_name}"},
                 {"id": "notes", "name": "Notas", "icon": "📝", "type": "notes"},
-                {"id": "browser", "name": "Google", "icon": "🌐", "type": "web", "url": "https://www.google.com/search?igu=1"}
+                {"id": "browser", "name": "Google", "icon": "🌐", "type": "web", "url": "https://www.google.com"}
             ]
         }
 
