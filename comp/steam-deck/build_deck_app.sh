@@ -39,6 +39,8 @@ npm install --silent
 
 # ── 3. Compilar AppImage ──
 echo "[2/2] Compilando .AppImage para SteamOS..."
+# Limpiar compilaciones anteriores para evitar errores de cache/rename en electron-builder
+rm -rf "$DECK_DIR/dist"
 npx electron-builder --linux AppImage
 
 mkdir -p "$ROOT_DIR/dist/steam-deck"
