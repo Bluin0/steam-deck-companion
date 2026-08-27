@@ -32,6 +32,7 @@
       "index.html",
       "style.css",
       "app.js",
+      "fonts/**",
       "package.json"
     ]
   },
