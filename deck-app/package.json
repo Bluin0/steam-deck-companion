@@ -24,7 +24,11 @@
         "AppImage",
         "zip"
       ],
-      "category": "Game"
+      "category": "Game",
+      "executableArgs": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ]
     },
     "files": [
       "main.js",
