@@ -68,6 +68,14 @@ def main_headless():
         asyncio.run(server.run())
     except KeyboardInterrupt:
         print("\n[+] Server shut down gracefully.")
+    except OSError as e:
+        err_str = str(e).lower()
+        if "address already in use" in err_str or "errno 98" in err_str or "errno 10048" in err_str:
+            print(f"\n[!] AVISO: Los puertos 8080 o 8765 ya están en uso por otra instancia del servidor.")
+            print(f"[!] Ya tienes un servidor funcionando en segundo plano.")
+            print(f"[!] Para cerrarlo y reiniciar, ejecuta: pkill -f SteamDeckCompanionServer\n")
+            sys.exit(1)
+        raise
 
 
 def main_gui():
@@ -88,6 +96,12 @@ def main():
             print(f"[!] GUI no disponible ({e}). Iniciando en modo terminal...")
             main_headless()
         except Exception as e:
+            err_str = str(e).lower()
+            if "address already in use" in err_str or "errno 98" in err_str or "errno 10048" in err_str:
+                print(f"\n[!] AVISO: Los puertos 8080 o 8765 ya están en uso por otra instancia del servidor.")
+                print(f"[!] Ya tienes un servidor funcionando en segundo plano.")
+                print(f"[!] Para cerrarlo y reiniciar, ejecuta: pkill -f SteamDeckCompanionServer\n")
+                sys.exit(1)
             print(f"[!] Error al abrir GUI ({e}). Iniciando en modo terminal...")
             main_headless()
 
