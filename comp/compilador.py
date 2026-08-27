@@ -71,9 +71,9 @@ class CompiladorGUI:
         # Card 3: Linux Server
         self._make_card(cards_frame, 2,
                         icon="🐧", title="Servidor Linux",
-                        desc="Paquete portable (.zip)",
-                        output="dist/linux/*-Portable.zip",
-                        btn_text="Empaquetar .zip",
+                        desc="Script Universal (.sh)",
+                        output="dist/linux/SteamDeckCompanionServer.sh",
+                        btn_text="Generar .sh",
                         btn_cmd=self._build_linux_server,
                         status_id="linux")
 
@@ -292,6 +292,87 @@ class CompiladorGUI:
 
         threading.Thread(target=_task, daemon=True).start()
 
+    def _generate_linux_sh(self):
+        """Generates a standalone, self-extracting single .sh server runner for Linux."""
+        import tarfile
+        os.makedirs(ROOT_DIR / "dist" / "linux", exist_ok=True)
+        sh_path = ROOT_DIR / "dist" / "linux" / "SteamDeckCompanionServer.sh"
+
+        header = (
+            "#!/usr/bin/env bash\n"
+            "# =======================================================\n"
+            "#    STEAM DECK COMPANION SERVER — PORTABLE LINUX RUNNER\n"
+            "# =======================================================\n\n"
+            "set -e\n\n"
+            'APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/steam-deck-companion/server"\n'
+            'mkdir -p "$APP_DIR"\n\n'
+            'if ! command -v python3 &> /dev/null; then\n'
+            '    echo "ERROR: Se requiere Python 3 instalado en el sistema."\n'
+            '    exit 1\n'
+            'fi\n\n'
+            'SCRIPT_HASH=$(md5sum "$0" 2>/dev/null | cut -d\' \' -f1 || cksum "$0" 2>/dev/null | cut -d\' \' -f1 || echo "installed")\n'
+            'HASH_FILE="$APP_DIR/.version_hash"\n\n'
+            'if [ ! -f "$HASH_FILE" ] || [ "$SCRIPT_HASH" != "$(cat "$HASH_FILE" 2>/dev/null)" ]; then\n'
+            '    echo "[+] Preparando Steam Deck Companion Server en $APP_DIR..."\n'
+            '    PAYLOAD_LINE=$(awk \'/^__PAYLOAD_BELOW__/ {print NR + 1; exit 0; }\' "$0")\n'
+            '    tail -n +"$PAYLOAD_LINE" "$0" | tar -xz -C "$APP_DIR"\n'
+            '    echo "$SCRIPT_HASH" > "$HASH_FILE"\n'
+            'fi\n\n'
+            'cd "$APP_DIR"\n\n'
+            '# ── Setup Python dependencies if missing ──\n'
+            'VENV_DIR="$APP_DIR/.venv"\n'
+            'PYTHON_BIN="python3"\n\n'
+            'if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then\n'
+            '    echo "[+] Verificando dependencias de Python (websockets, psutil)..."\n'
+            '    python3 -m pip install --user --quiet -r "$APP_DIR/requirements.txt" 2>/dev/null || \\\n'
+            '    pip3 install --user --quiet -r "$APP_DIR/requirements.txt" 2>/dev/null || true\n\n'
+            '    if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then\n'
+            '        if [ ! -d "$VENV_DIR" ]; then\n'
+            '            python3 -m venv "$VENV_DIR" 2>/dev/null || true\n'
+            '        fi\n'
+            '        if [ -f "$VENV_DIR/bin/pip" ]; then\n'
+            '            "$VENV_DIR/bin/pip" install --quiet -r "$APP_DIR/requirements.txt" 2>/dev/null || true\n'
+            '            PYTHON_BIN="$VENV_DIR/bin/python3"\n'
+            '        fi\n'
+            '    fi\n\n'
+            '    # Fallback portable installer (uv) if system lacks pip/venv\n'
+            '    if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then\n'
+            '        echo "[+] Configurando entorno portable..."\n'
+            '        UV_DIR="$APP_DIR/.uv"\n'
+            '        mkdir -p "$UV_DIR"\n'
+            '        if [ ! -f "$UV_DIR/uv" ]; then\n'
+            '            ARCH=$(uname -m)\n'
+            '            curl -sSL "https://github.com/astral-sh/uv/releases/latest/download/uv-${ARCH}-unknown-linux-gnu.tar.gz" 2>/dev/null | tar -xz -C "$UV_DIR" --strip-components=1 2>/dev/null || true\n'
+            '        fi\n'
+            '        if [ -f "$UV_DIR/uv" ]; then\n'
+            '            "$UV_DIR/uv" venv "$APP_DIR/.venv" 2>/dev/null || true\n'
+            '            "$UV_DIR/uv" pip install --no-cache -r "$APP_DIR/requirements.txt" --python "$APP_DIR/.venv/bin/python3" 2>/dev/null || true\n'
+            '            if [ -f "$APP_DIR/.venv/bin/python3" ]; then\n'
+            '                PYTHON_BIN="$APP_DIR/.venv/bin/python3"\n'
+            '            fi\n'
+            '        fi\n'
+            '    fi\n'
+            'fi\n\n'
+            '# ── Launch Server ──\n'
+            'exec "$PYTHON_BIN" "$APP_DIR/src/server/main.py" "$@"\n\n'
+            '__PAYLOAD_BELOW__\n'
+        )
+
+        with open(sh_path, "wb") as out_f:
+            out_f.write(header.encode("utf-8"))
+            with tarfile.open(fileobj=out_f, mode="w:gz") as tar:
+                tar.add(ROOT_DIR / "src", arcname="src",
+                        filter=lambda ti: None if "__pycache__" in ti.name or ti.name.endswith(".pyc") else ti)
+                tar.add(ROOT_DIR / "profiles", arcname="profiles")
+                tar.add(ROOT_DIR / "requirements.txt", arcname="requirements.txt")
+
+        try:
+            sh_path.chmod(0o755)
+        except Exception:
+            pass
+
+        return sh_path
+
     def _build_linux_server(self):
         if self.building:
             return
@@ -299,59 +380,14 @@ class CompiladorGUI:
         self._set_buttons_state(False)
 
         def _task():
-            self._set_card_status("linux", "🔄 Empaquetando...", self.YELLOW)
-            self._log("\n══════ EMPAQUETANDO SERVIDOR LINUX (.zip) ══════")
-
-            import zipfile
-            os.makedirs(ROOT_DIR / "dist" / "linux", exist_ok=True)
-            zip_path = ROOT_DIR / "dist" / "linux" / "SteamDeckCompanionServer-Linux-Portable.zip"
+            self._set_card_status("linux", "🔄 Generando...", self.YELLOW)
+            self._log("\n══════ GENERANDO SERVIDOR LINUX (.sh) ══════")
 
             try:
-                with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-                    # Launcher script
-                    launcher = (
-                        '#!/bin/bash\n'
-                        'cd "$(dirname "$0")"\n'
-                        'echo "=========================================="\n'
-                        'echo "   STEAM DECK COMPANION SERVER (LINUX)"\n'
-                        'echo "=========================================="\n'
-                        'if ! python3 -c "import websockets" 2>/dev/null; then\n'
-                        '    echo "[+] Instalando dependencias..."\n'
-                        '    python3 -m venv .venv 2>/dev/null || true\n'
-                        '    if [ -f .venv/bin/pip ]; then\n'
-                        '        .venv/bin/pip install --quiet -r requirements.txt\n'
-                        '        exec .venv/bin/python3 src/server/main.py "$@"\n'
-                        '    fi\n'
-                        '    python3 -m pip install --user --quiet -r requirements.txt 2>/dev/null || true\n'
-                        'fi\n'
-                        'python3 src/server/main.py "$@"\n'
-                    )
-                    zf.writestr("iniciar_servidor.sh", launcher)
-
-                    # requirements.txt
-                    zf.write(ROOT_DIR / "requirements.txt", "requirements.txt")
-
-                    # src/ folder
-                    for root_folder, dirs, files in os.walk(ROOT_DIR / "src"):
-                        # Skip __pycache__
-                        dirs[:] = [d for d in dirs if d != "__pycache__"]
-                        for f in files:
-                            if f.endswith(".pyc"):
-                                continue
-                            full_p = Path(root_folder) / f
-                            rel_p = full_p.relative_to(ROOT_DIR)
-                            zf.write(full_p, str(rel_p))
-
-                    # profiles/ folder
-                    for root_folder, dirs, files in os.walk(ROOT_DIR / "profiles"):
-                        for f in files:
-                            full_p = Path(root_folder) / f
-                            rel_p = full_p.relative_to(ROOT_DIR)
-                            zf.write(full_p, str(rel_p))
-
-                self._set_card_status("linux", "✅ Empaquetado", self.GREEN)
-                self._log(f"[OK] {zip_path.relative_to(ROOT_DIR)}")
-                self._log("Nota: Para un .AppImage nativo, ejecuta comp/linux/build_server.sh en Linux.")
+                sh_path = self._generate_linux_sh()
+                self._set_card_status("linux", "✅ Generado", self.GREEN)
+                self._log(f"[OK] {sh_path.relative_to(ROOT_DIR)}")
+                self._log("Script autónomo universal listo para todas las distros Linux.")
 
             except Exception as e:
                 self._set_card_status("linux", "❌ Error", self.RED)
@@ -428,25 +464,13 @@ class CompiladorGUI:
             else:
                 self._set_card_status("deck", "❌ Error", self.RED)
 
-            # 3. Linux Server Portable
-            self._set_card_status("linux", "🔄 Empaquetando...", self.YELLOW)
-            self._log("\n══════ [3/3] SERVIDOR LINUX (.zip) ══════")
+            # 3. Linux Server Portable (.sh)
+            self._set_card_status("linux", "🔄 Generando...", self.YELLOW)
+            self._log("\n══════ [3/3] SERVIDOR LINUX (.sh) ══════")
             try:
-                import zipfile
-                os.makedirs(ROOT_DIR / "dist" / "linux", exist_ok=True)
-                zip_path = ROOT_DIR / "dist" / "linux" / "SteamDeckCompanionServer-Linux-Portable.zip"
-                with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-                    launcher = '#!/bin/bash\ncd "$(dirname "$0")"\npython3 -m venv .venv 2>/dev/null||true\n[ -f .venv/bin/pip ]&&.venv/bin/pip install -q -r requirements.txt\nPY=$([[ -f .venv/bin/python3 ]]&&echo .venv/bin/python3||echo python3)\n"$PY" src/server/main.py "$@"\n'
-                    zf.writestr("iniciar_servidor.sh", launcher)
-                    zf.write(ROOT_DIR / "requirements.txt", "requirements.txt")
-                    for folder in ["src", "profiles"]:
-                        for root_f, dirs, files in os.walk(ROOT_DIR / folder):
-                            dirs[:] = [d for d in dirs if d != "__pycache__"]
-                            for f in files:
-                                if not f.endswith(".pyc"):
-                                    fp = Path(root_f) / f
-                                    zf.write(fp, str(fp.relative_to(ROOT_DIR)))
-                self._set_card_status("linux", "✅ Empaquetado", self.GREEN)
+                sh_path = self._generate_linux_sh()
+                self._set_card_status("linux", "✅ Generado", self.GREEN)
+                self._log(f"[OK] {sh_path.relative_to(ROOT_DIR)}")
             except Exception as e:
                 self._set_card_status("linux", "❌ Error", self.RED)
                 self._log(f"[ERROR] {e}")
@@ -455,7 +479,7 @@ class CompiladorGUI:
             self._log("Archivos listos en la carpeta dist/:")
             self._log("  1. dist/windows/SteamDeckCompanionServer.exe")
             self._log("  2. dist/steam-deck/*.AppImage")
-            self._log("  3. dist/linux/*-Portable.zip")
+            self._log("  3. dist/linux/SteamDeckCompanionServer.sh")
             self._log("\nSube estos archivos a GitHub Releases.")
 
             self.building = False
