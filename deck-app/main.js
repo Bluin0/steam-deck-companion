@@ -1,3 +1,23 @@
+// Auto-relaunch on Linux/SteamOS if required CLI flags are missing.
+// This ensures that double-clicking the .AppImage or launching from Steam/Dolphin
+// without terminal arguments will ALWAYS start with --no-sandbox and --disable-dev-shm-usage.
+if (process.platform === 'linux') {
+    const requiredFlags = ['--no-sandbox', '--disable-dev-shm-usage'];
+    const missingFlags = requiredFlags.filter(f => !process.argv.includes(f));
+
+    if (missingFlags.length > 0 && !process.env.SDC_RELAUNCHED) {
+        const { spawn } = require('child_process');
+        const targetBin = process.env.APPIMAGE || process.execPath;
+        const child = spawn(targetBin, [...missingFlags, ...process.argv.slice(1)], {
+            detached: true,
+            stdio: 'inherit',
+            env: { ...process.env, SDC_RELAUNCHED: '1' }
+        });
+        child.unref();
+        process.exit(0);
+    }
+}
+
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const fs = require('fs');

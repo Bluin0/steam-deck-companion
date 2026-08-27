@@ -43,6 +43,7 @@ npx electron-builder --linux AppImage
 
 mkdir -p "$ROOT_DIR/dist/steam-deck"
 cp -f "$DECK_DIR/dist/"*.AppImage "$ROOT_DIR/dist/steam-deck/" 2>/dev/null || true
+chmod +x "$ROOT_DIR/dist/steam-deck/"*.AppImage 2>/dev/null || true
 
 echo ""
 echo "======================================================="
