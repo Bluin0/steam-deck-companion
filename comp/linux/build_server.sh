@@ -14,6 +14,14 @@ cd "$ROOT_DIR"
 # ── 1. Setup Python environment ──
 echo "[1/5] Verificando dependencias Python y PyInstaller..."
 
+if ! python3 -c "import tkinter" &> /dev/null; then
+    echo "   [!] AVISO: 'python3-tk' no está instalado en este sistema."
+    echo "       Para que el ejecutable incluya la ventana gráfica (GUI),"
+    echo "       instala primero: sudo apt install -y python3-tk"
+    echo "       (De lo contrario, se ejecutará con interfaz Web automática)."
+    echo ""
+fi
+
 PYINSTALLER_BIN=""
 if command -v pyinstaller &> /dev/null; then
     PYINSTALLER_BIN="pyinstaller"

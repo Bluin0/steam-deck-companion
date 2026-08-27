@@ -64,6 +64,16 @@ def main_headless():
         virtual_controller=controller
     )
 
+    # If launched without an interactive terminal (e.g. double-clicked from file manager),
+    # automatically open the web dashboard in the default browser for visual feedback.
+    if not sys.stdin or not sys.stdin.isatty():
+        try:
+            import webbrowser
+            import threading
+            threading.Timer(1.0, lambda: webbrowser.open("http://localhost:8080")).start()
+        except Exception:
+            pass
+
     try:
         asyncio.run(server.run())
     except KeyboardInterrupt:
