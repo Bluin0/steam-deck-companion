@@ -3,10 +3,14 @@ const path = require('path');
 const fs = require('fs');
 
 // ── SteamOS / Linux Compatibility ──
+// Disable GPU hardware acceleration — required on Steam Deck (AMD Van Gogh)
+// to prevent Electron's Chromium renderer from freezing on a blank screen.
 if (process.platform === 'linux') {
+    app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('no-sandbox');
-    app.commandLine.appendSwitch('disable-gpu-sandbox');
-    app.commandLine.appendSwitch('disable-setuid-sandbox');
+    app.commandLine.appendSwitch('disable-gpu');
+    app.commandLine.appendSwitch('disable-gpu-compositing');
+    app.commandLine.appendSwitch('disable-software-rasterizer');
 }
 
 let mainWindow = null;
