@@ -45,6 +45,17 @@ mkdir -p "$ROOT_DIR/dist/steam-deck"
 cp -f "$DECK_DIR/dist/"*.AppImage "$ROOT_DIR/dist/steam-deck/" 2>/dev/null || true
 chmod +x "$ROOT_DIR/dist/steam-deck/"*.AppImage 2>/dev/null || true
 
+# Generar script lanzador con flags óptimos para Steam Gaming Mode
+cat << 'EOF' > "$ROOT_DIR/dist/steam-deck/iniciar_companion.sh"
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APPIMAGE=$(ls -1 "$DIR"/*.AppImage 2>/dev/null | head -1)
+if [ -f "$APPIMAGE" ]; then
+    exec "$APPIMAGE" --no-sandbox --disable-dev-shm-usage "$@"
+fi
+EOF
+chmod +x "$ROOT_DIR/dist/steam-deck/iniciar_companion.sh"
+
 echo ""
 echo "======================================================="
 echo "   ✅ ¡APP DE STEAM DECK COMPILADA CON ÉXITO!"
