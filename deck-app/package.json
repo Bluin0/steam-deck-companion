@@ -28,7 +28,8 @@
       "category": "Game",
       "executableArgs": [
         "--no-sandbox",
-        "--disable-dev-shm-usage"
+        "--disable-dev-shm-usage",
+        "--touch-events=enabled"
       ]
     },
     "files": [

@@ -445,6 +445,8 @@ body {
     height: 100%;
     background: #0f141c;
     overflow: hidden;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
 }
 
 .web-view-tag {
@@ -453,6 +455,7 @@ body {
     border: none;
     background: #fff;
     display: flex !important;
+    touch-action: pan-x pan-y;
 }
 
 /* Notes View */

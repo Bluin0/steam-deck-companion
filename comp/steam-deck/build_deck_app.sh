@@ -53,7 +53,7 @@ cat << 'EOF' > "$ROOT_DIR/dist/steam-deck/iniciar_companion.sh"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APPIMAGE=$(ls -1 "$DIR"/*.AppImage 2>/dev/null | head -1)
 if [ -f "$APPIMAGE" ]; then
-    exec "$APPIMAGE" --no-sandbox --disable-dev-shm-usage "$@"
+    exec "$APPIMAGE" --no-sandbox --disable-dev-shm-usage --touch-events=enabled "$@"
 fi
 EOF
 chmod +x "$ROOT_DIR/dist/steam-deck/iniciar_companion.sh"

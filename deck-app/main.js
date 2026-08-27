@@ -28,6 +28,9 @@ if (process.platform === 'linux') {
     app.commandLine.appendSwitch('disable-dev-shm-usage');
     app.commandLine.appendSwitch('disable-gpu-sandbox');
     app.commandLine.appendSwitch('disable-setuid-sandbox');
+    app.commandLine.appendSwitch('touch-events', 'enabled');
+    app.commandLine.appendSwitch('enable-touch-drag-drop');
+    app.commandLine.appendSwitch('enable-pinch');
     app.commandLine.appendSwitch('log-level', '3');
 }
 

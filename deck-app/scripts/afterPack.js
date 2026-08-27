@@ -32,7 +32,7 @@ exports.default = async function(context) {
 
                     const wrapper = `#!/bin/sh
 HERE="$(dirname "$(readlink -f "$0")")"
-exec "$HERE/${name}.bin" --no-sandbox --disable-dev-shm-usage "$@"
+exec "$HERE/${name}.bin" --no-sandbox --disable-dev-shm-usage --touch-events=enabled "$@"
 `;
                     fs.writeFileSync(binPath, wrapper, { mode: 0o755 });
                     fs.chmodSync(binPath, 0o755);

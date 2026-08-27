@@ -459,7 +459,19 @@ function setupWebview() {
     if (!webFrame) return;
 
     webFrame.addEventListener('did-start-loading', startWebLoading);
-    webFrame.addEventListener('dom-ready', stopWebLoading);
+    webFrame.addEventListener('dom-ready', () => {
+        stopWebLoading();
+        try {
+            if (webFrame.insertCSS) {
+                webFrame.insertCSS(`
+                    html, body {
+                        touch-action: pan-x pan-y !important;
+                        -webkit-overflow-scrolling: touch !important;
+                    }
+                `).catch(() => {});
+            }
+        } catch (e) {}
+    });
     webFrame.addEventListener('did-stop-loading', stopWebLoading);
     webFrame.addEventListener('did-finish-load', stopWebLoading);
     webFrame.addEventListener('did-fail-load', (e) => {
