@@ -211,6 +211,10 @@ class CompanionServer:
         self.connected_clients.add(websocket)
         client_addr = websocket.remote_address
         print(f"[WS] Client connected: {client_addr}")
+        if hasattr(self, '_gui_log') and self._gui_log:
+            self._gui_log(f"[+] Steam Deck conectada: {client_addr[0]}")
+        if hasattr(self, '_gui_update') and self._gui_update:
+            self._gui_update(clients=len(self.connected_clients))
 
         appid = self.current_game.get("appid") if self.current_game else "default"
 
@@ -260,6 +264,10 @@ class CompanionServer:
         finally:
             self.connected_clients.remove(websocket)
             print(f"[WS] Client disconnected: {client_addr}")
+            if hasattr(self, '_gui_log') and self._gui_log:
+                self._gui_log(f"[-] Steam Deck desconectada: {client_addr[0]}")
+            if hasattr(self, '_gui_update') and self._gui_update:
+                self._gui_update(clients=len(self.connected_clients))
 
     async def broadcast_game_state(self, game_info):
         """Broadcasts running game status & corresponding profile to all clients."""

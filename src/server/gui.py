@@ -224,6 +224,13 @@ class ServerGUI:
             self._update_info(games=0)
 
         self.controller = VirtualController()
+        if self.controller.available:
+            self._log(f"[+] Mando Virtual activo ({self.controller.backend})")
+        else:
+            self._log("[!] Mando virtual NO inicializado.")
+            if sys.platform == "win32":
+                self._log("    Instala el driver ViGEmBus para simular mando Xbox en Windows:")
+                self._log("    https://github.com/nefarius/ViGEmBus/releases")
 
         self.server = CompanionServer(
             host="0.0.0.0",
