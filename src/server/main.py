@@ -12,26 +12,33 @@ CURRENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(CURRENT_DIR))
 sys.path.insert(0, str(CURRENT_DIR.parent))
 
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    sys.path.insert(0, str(sys._MEIPASS))
-    sys.path.insert(0, str(Path(sys._MEIPASS) / "server"))
-
-try:
-    from server.game_detector import GameDetector
-    from server.virtual_controller import VirtualController
-    from server.ws_server import CompanionServer
-except ImportError:
+if getattr(sys, 'frozen', False):
+    if hasattr(sys, '_MEIPASS'):
+        sys.path.insert(0, str(sys._MEIPASS))
     from game_detector import GameDetector
     from virtual_controller import VirtualController
     from ws_server import CompanionServer
-
-try:
-    from server.gui import launch_gui
-except ImportError:
     try:
         from gui import launch_gui
-    except ImportError:
+    except Exception:
         launch_gui = None
+else:
+    try:
+        from server.game_detector import GameDetector
+        from server.virtual_controller import VirtualController
+        from server.ws_server import CompanionServer
+    except ImportError:
+        from game_detector import GameDetector
+        from virtual_controller import VirtualController
+        from ws_server import CompanionServer
+
+    try:
+        from server.gui import launch_gui
+    except ImportError:
+        try:
+            from gui import launch_gui
+        except Exception:
+            launch_gui = None
 
 
 def main_headless():

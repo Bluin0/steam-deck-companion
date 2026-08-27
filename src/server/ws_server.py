@@ -7,25 +7,41 @@ import http.server
 import json
 import socketserver
 import threading
+import os
 import sys
 from pathlib import Path
 import websockets
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     BUNDLE_DIR = Path(sys._MEIPASS)
-    ROOT_DIR = Path(sys.executable).parent
     CLIENT_DIR = BUNDLE_DIR / "src" / "client"
     PROFILES_DIR = BUNDLE_DIR / "profiles"
+
+    # In Linux AppImage mode, sys.executable is mounted read-only (/tmp/.mount_*/...)
+    # User writable data (like notes) must be stored in ~/.local/share/steam-deck-companion/notes
+    if os.environ.get("APPIMAGE") or sys.platform.startswith("linux"):
+        data_dir = Path.home() / ".local" / "share" / "steam-deck-companion"
+        NOTES_DIR = data_dir / "notes"
+    else:
+        # Windows (.exe)
+        ROOT_DIR = Path(sys.executable).parent
+        NOTES_DIR = ROOT_DIR / "notes"
 else:
     ROOT_DIR = Path(__file__).resolve().parent.parent.parent
     CLIENT_DIR = Path(__file__).resolve().parent.parent / "client"
     PROFILES_DIR = ROOT_DIR / "profiles"
+    NOTES_DIR = ROOT_DIR / "notes"
 
-NOTES_DIR = ROOT_DIR / "notes"
+# Ensure notes directory exists (guarded against read-only mounts)
+try:
+    NOTES_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
-# Ensure notes and profiles directory exist
-NOTES_DIR.mkdir(exist_ok=True)
-PROFILES_DIR.mkdir(exist_ok=True)
+try:
+    PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
 import urllib.parse
 import urllib.request
