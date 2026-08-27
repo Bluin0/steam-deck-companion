@@ -14,6 +14,7 @@ class VirtualController:
         self.backend = None # 'vgamepad', 'evdev', or None
         self.gamepad = None
         self.available = False
+        self.error_msg = ""
         self._init_device()
 
     def _init_device(self):
@@ -28,6 +29,7 @@ class VirtualController:
                 print("[VirtualController] Virtual Xbox 360 Controller (vgamepad/ViGEmBus) initialized successfully.")
                 return
             except Exception as e:
+                self.error_msg = str(e)
                 print(f"[VirtualController] Notice: vgamepad not initialized ({e}).")
 
         # 2. Try Linux uinput / evdev

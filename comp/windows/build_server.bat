@@ -19,6 +19,7 @@ python -m PyInstaller ^
     --windowed ^
     --clean ^
     --noconfirm ^
+    --collect-all vgamepad ^
     --add-data "%CD%\profiles;profiles" ^
     --add-data "%CD%\src\client;src/client" ^
     --distpath "dist\windows" ^

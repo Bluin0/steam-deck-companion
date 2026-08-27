@@ -227,7 +227,8 @@ class ServerGUI:
         if self.controller.available:
             self._log(f"[+] Mando Virtual activo ({self.controller.backend})")
         else:
-            self._log("[!] Mando virtual NO inicializado.")
+            err = f" ({self.controller.error_msg})" if getattr(self.controller, 'error_msg', '') else ""
+            self._log(f"[!] Mando virtual NO inicializado{err}")
             if sys.platform == "win32":
                 self._log("    Instala el driver ViGEmBus para simular mando Xbox en Windows:")
                 self._log("    https://github.com/nefarius/ViGEmBus/releases")
