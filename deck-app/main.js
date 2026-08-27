@@ -8,6 +8,7 @@ if (process.platform === 'linux') {
     app.commandLine.appendSwitch('disable-dev-shm-usage');
     app.commandLine.appendSwitch('disable-gpu-sandbox');
     app.commandLine.appendSwitch('disable-setuid-sandbox');
+    app.commandLine.appendSwitch('log-level', '3');
 }
 
 let mainWindow = null;
