@@ -17,6 +17,11 @@ class VirtualController:
         self.error_msg = ""
         self._init_device()
 
+    def reinit(self):
+        """Attempts to re-initialize the controller device (e.g. after driver installation)."""
+        self._init_device()
+        return self.available
+
     def _init_device(self):
         # 1. Try Windows vgamepad
         if sys.platform == "win32":

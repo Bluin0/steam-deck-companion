@@ -22,6 +22,7 @@ python -m PyInstaller ^
     --collect-all vgamepad ^
     --add-data "%CD%\profiles;profiles" ^
     --add-data "%CD%\src\client;src/client" ^
+    --add-data "%CD%\drivers;drivers" ^
     --distpath "dist\windows" ^
     "src\server\main.py"
 

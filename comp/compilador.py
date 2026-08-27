@@ -200,6 +200,7 @@ class CompiladorGUI:
                 "--collect-all", "vgamepad",
                 "--add-data", f"{ROOT_DIR / 'profiles'};profiles",
                 "--add-data", f"{ROOT_DIR / 'src' / 'client'};src/client",
+                "--add-data", f"{ROOT_DIR / 'drivers'};drivers",
                 "--distpath", str(ROOT_DIR / "dist" / "windows"),
                 str(ROOT_DIR / "src" / "server" / "main.py")
             ])
@@ -381,6 +382,7 @@ class CompiladorGUI:
                 "--collect-all", "vgamepad",
                 "--add-data", f"{ROOT_DIR / 'profiles'};profiles",
                 "--add-data", f"{ROOT_DIR / 'src' / 'client'};src/client",
+                "--add-data", f"{ROOT_DIR / 'drivers'};drivers",
                 "--distpath", str(ROOT_DIR / "dist" / "windows"),
                 str(ROOT_DIR / "src" / "server" / "main.py")
             ])

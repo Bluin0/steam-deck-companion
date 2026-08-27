@@ -230,8 +230,7 @@ class ServerGUI:
             err = f" ({self.controller.error_msg})" if getattr(self.controller, 'error_msg', '') else ""
             self._log(f"[!] Mando virtual NO inicializado{err}")
             if sys.platform == "win32":
-                self._log("    Instala el driver ViGEmBus para simular mando Xbox en Windows:")
-                self._log("    https://github.com/nefarius/ViGEmBus/releases")
+                self._show_driver_install_banner()
 
         self.server = CompanionServer(
             host="0.0.0.0",
@@ -273,6 +272,70 @@ class ServerGUI:
         self._set_status(False)
         # Server thread is daemon, will die with the app
         self._log("[+] Servidor detenido. Puedes cerrar la ventana.")
+
+    # ──────── Driver Auto-Install (Windows ViGEmBus) ────────
+
+    def _get_driver_installer_path(self):
+        from pathlib import Path
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            p = Path(sys._MEIPASS) / "drivers" / "ViGEmBusSetup.exe"
+        else:
+            p = Path(__file__).resolve().parent.parent.parent / "drivers" / "ViGEmBusSetup.exe"
+        return p if p.exists() else None
+
+    def _show_driver_install_banner(self):
+        if hasattr(self, 'driver_banner') and self.driver_banner:
+            self.driver_banner.pack(fill="x", padx=20, pady=(10, 0), before=self.start_btn.master)
+            return
+
+        self.driver_banner = tk.Frame(self.root, bg="#2a161c", highlightbackground="#ff4d6a", highlightthickness=1)
+        self.driver_banner.pack(fill="x", padx=20, pady=(10, 0), before=self.start_btn.master)
+
+        content = tk.Frame(self.driver_banner, bg="#2a161c")
+        content.pack(fill="x", padx=12, pady=10)
+
+        left = tk.Frame(content, bg="#2a161c")
+        left.pack(side="left", fill="both", expand=True)
+
+        tk.Label(left, text="⚠️ Driver de Mando Xbox (ViGEmBus) no detectado",
+                 font=("Segoe UI", 10, "bold"), bg="#2a161c", fg="#ff6b81").pack(anchor="w")
+        tk.Label(left, text="Necesario para que Windows reconozca los controles de la Steam Deck en tus juegos.",
+                 font=("Segoe UI", 8), bg="#2a161c", fg=self.FG_DIM).pack(anchor="w")
+
+        btn = tk.Button(content, text="📥 Instalar Driver de Mando", font=("Segoe UI", 10, "bold"),
+                        bg="#ff4d6a", fg="white", activebackground="#e84118", activeforeground="white",
+                        relief="flat", cursor="hand2", command=self._install_driver, padx=12, pady=4)
+        btn.pack(side="right")
+
+    def _install_driver(self):
+        installer = self._get_driver_installer_path()
+        if not installer:
+            self._log("[!] No se encontró el instalador local ViGEmBusSetup.exe.")
+            self._log("    Descárgalo manualmente de: https://github.com/nefarius/ViGEmBus/releases")
+            import webbrowser
+            webbrowser.open("https://github.com/nefarius/ViGEmBus/releases/latest")
+            return
+
+        self._log("[+] Lanzando instalador oficial de ViGEmBus...")
+        try:
+            import subprocess
+            subprocess.Popen([str(installer)])
+            self._log("[+] Sigue los pasos del instalador de Windows (acepta permisos de Administrador).")
+            self._log("[+] El servidor activará el mando automáticamente en cuanto termine la instalación.")
+            self._poll_driver_installation()
+        except Exception as e:
+            self._log(f"[!] Error ejecutando instalador: {e}")
+
+    def _poll_driver_installation(self, attempts=45):
+        if not self.server_running or not self.controller:
+            return
+        if self.controller.reinit():
+            if hasattr(self, 'driver_banner') and self.driver_banner:
+                self.driver_banner.pack_forget()
+            self._log("[+] ¡Driver ViGEmBus detectado con éxito! Mando Virtual Xbox 360 ACTIVO.")
+            return
+        if attempts > 0:
+            self.root.after(2000, lambda: self._poll_driver_installation(attempts - 1))
 
     # ──────── Main Loop ────────
 
