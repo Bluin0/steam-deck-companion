@@ -41,10 +41,26 @@ else:
             launch_gui = None
 
 
+def get_local_ip():
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
 def main_headless():
     """Run server in headless/terminal mode (no GUI)."""
+    ip = get_local_ip()
     print("==========================================")
     print("      STEAM DECK COMPANION SERVER         ")
+    print("==========================================")
+    print(f"📡 IP LOCAL DE ESTE PC: {ip}")
+    print(f"👉 En tu Steam Deck, pulsa '⚙️ Cambiar IP' e introduce: {ip}")
     print("==========================================")
 
     detector = GameDetector()

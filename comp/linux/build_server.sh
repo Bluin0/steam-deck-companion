@@ -45,24 +45,17 @@ cd "$APP_DIR"
 VENV_DIR="$APP_DIR/.venv"
 PYTHON_BIN="python3"
 
+if [ -f "$VENV_DIR/bin/python3" ] && "$VENV_DIR/bin/python3" -c "import websockets, psutil" 2>/dev/null; then
+    PYTHON_BIN="$VENV_DIR/bin/python3"
+fi
+
 if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then
     echo "[+] Verificando dependencias de Python (websockets, psutil)..."
     python3 -m pip install --user --quiet -r "$APP_DIR/requirements.txt" 2>/dev/null || \
     pip3 install --user --quiet -r "$APP_DIR/requirements.txt" 2>/dev/null || true
 
     if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then
-        if [ ! -d "$VENV_DIR" ]; then
-            python3 -m venv "$VENV_DIR" 2>/dev/null || true
-        fi
-        if [ -f "$VENV_DIR/bin/pip" ]; then
-            "$VENV_DIR/bin/pip" install --quiet -r "$APP_DIR/requirements.txt" 2>/dev/null || true
-            PYTHON_BIN="$VENV_DIR/bin/python3"
-        fi
-    fi
-
-    # Fallback portable installer (uv) if system lacks pip/venv
-    if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then
-        echo "[+] Configurando entorno portable..."
+        echo "[+] Configurando entorno Python portable automático..."
         UV_DIR="$APP_DIR/.uv"
         mkdir -p "$UV_DIR"
         if [ ! -f "$UV_DIR/uv" ]; then
@@ -70,10 +63,12 @@ if ! "$PYTHON_BIN" -c "import websockets, psutil" 2>/dev/null; then
             curl -sSL "https://github.com/astral-sh/uv/releases/latest/download/uv-${ARCH}-unknown-linux-gnu.tar.gz" 2>/dev/null | tar -xz -C "$UV_DIR" --strip-components=1 2>/dev/null || true
         fi
         if [ -f "$UV_DIR/uv" ]; then
-            "$UV_DIR/uv" venv "$APP_DIR/.venv" 2>/dev/null || true
-            "$UV_DIR/uv" pip install --no-cache -r "$APP_DIR/requirements.txt" --python "$APP_DIR/.venv/bin/python3" 2>/dev/null || true
-            if [ -f "$APP_DIR/.venv/bin/python3" ]; then
-                PYTHON_BIN="$APP_DIR/.venv/bin/python3"
+            export UV_LINK_MODE=copy
+            "$UV_DIR/uv" python install 3.12 2>/dev/null || true
+            "$UV_DIR/uv" venv "$VENV_DIR" --python 3.12 2>/dev/null || "$UV_DIR/uv" venv "$VENV_DIR" 2>/dev/null || true
+            "$UV_DIR/uv" pip install --no-cache -r "$APP_DIR/requirements.txt" --python "$VENV_DIR/bin/python3" 2>/dev/null || true
+            if [ -f "$VENV_DIR/bin/python3" ]; then
+                PYTHON_BIN="$VENV_DIR/bin/python3"
             fi
         fi
     fi
